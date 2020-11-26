@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>Welcome to IOTA Faucet</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/pace.css">
+</head>
+
+<body>
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <div class="container">
+
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-4" id="app">
+
+        <div style="margin-top: 25%">
+          <img src="/img/logo-text.svg" alt="IOTA" class="mt-3">
+          <h3>Welcome to the IOTA Faucet</h3>
+          <small>This service distributes tokens to the requested IOTA address on the Chrysalis test network.</small>
+          <div v-show="ready">
+          <p class="pt-5">{{ caption }}
+            <a v-if="addressValid" :disabled="waiting" v-bind:href="explorer + 'address/'+address" target="_blank" class="text-info ml-1 pt-2"> Check balance</a>
+            <a v-if="!addressValid" :disabled="waiting" href="https://docs.iota.org/" target="_blank" class="text-info ml-1 pt-2"> Learn More</a>
+            </p>
+          <div class="input-group" style="margin-top: 10px">
+            <input type="text" v-model="address" class="form-control" :disabled="waiting" v-bind:class="[addressValid ? 'is-valid':'is-invalid']" id="address" placeholder="enter a valid IOTA address">
+            <span class="input-group-btn">
+              <button type="button" v-if="addressValid" :disabled="waiting" v-on:click="requestTokens" class="btn btn-success ml-1"> Request</button>
+            </span>
+
+          </div>
+          <p v-if="receivedMessage">
+                <br><a :disabled="waiting" v-bind:href="explorer + 'message/'+receivedMessage.id" target="_blank" class="text-info ml-1 pt-2">View message {{receivedMessage.id.slice(0,16)}}...</a>
+          </p>
+          <p class="pt-2" v-bind:class="error ? 'text-warning' : 'text-info'">
+            <i class="fa fa-spinner fa-pulse fa-fw fa-spin" v-if="waiting" style="font-size:24px; margin-top:2px; margin-right:5px;"></i> 
+
+          </p>
+
+          <div v-if="finished" class="input-group" style="margin-top: 10px">
+            <textarea class="form-control" v-model="result" rows="10" style="z-index: auto; position: relative; line-height: 24px; font-size: 16px; transition: none;"></textarea>
+          </div> 
+          </div>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
+<script src="/js/app.js"></script>
+</html>

@@ -1,0 +1,143 @@
+@font-face {
+    font-family: 'DM';
+    src: url('fonts/dmsans-bold-webfont.woff2') format('woff2'),
+         url('fonts/dmsans-bold-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'DMBold';
+    src: url('fonts/dmsans-medium-webfont.woff2') format('woff2'),
+         url('fonts/dmsans-medium-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+html, body {
+	position: relative;
+	width: 100%;
+	height: 100%;
+    background: #fff;
+}
+
+body {
+	color: #333;
+	margin: 0;
+    padding: 0;
+	box-sizing: border-box;
+	font-family: "DM", sans-serif;
+}
+
+a {
+	color: rgb(0,100,200);
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:visited {
+	color: rgb(0,80,160);
+}
+
+label {
+	display: block;
+}
+
+input, button, select, textarea {
+	font-family: inherit;
+	font-size: inherit;
+	-webkit-padding: 0.4em 0;
+	padding: 0.4em;
+	margin: 0 0 0.5em 0;
+	box-sizing: border-box;
+	border: 1px solid #ccc;
+	border-radius: 2px;
+}
+
+input:disabled {
+	color: #ccc;
+}
+
+button {
+	color: #333;
+	background-color: #f4f4f4;
+	outline: none;
+}
+
+button:disabled {
+	color: #999;
+}
+
+button:not(:disabled):active {
+	background-color: #ddd;
+}
+
+button:focus {
+	border-color: #666;
+}
+
+.content {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.illustration-container {
+    width: 45%; 
+    position: absolute; 
+    right: 0; 
+    top: 100px;
+}
+
+.illustration {
+    max-width: 100%;
+    width: 100%;
+}
+
+.contentrow {
+    margin-top: 70px;
+    padding: 0px 20px;
+}
+
+.logo {
+    height: 64px;
+}
+
+h1 {
+    font-size: 32px;
+}
+
+#app main {
+    max-width: 380px;
+    transition: max-width 1s;
+}
+
+@media screen and (max-width: 480px) {
+    main .right button {
+        display: block;
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 940px) {
+    .illustration-container {
+        width: 100%;
+        display: block;
+        position: static;
+    }
+
+    #app main {
+        margin-left: 0;
+        max-width: none;
+    }
+}
+
+@media screen and (min-width: 1140px) {
+    #app main {
+        max-width: 480px;
+    }
+}

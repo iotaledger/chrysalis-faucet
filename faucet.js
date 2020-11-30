@@ -51,7 +51,7 @@ async function run() {
         message: {'message': `You can only request tokens from the faucet once every ${secs} seconds.`}
     });
     
-    app.use(express.static('public'))
+    app.use(express.static('frontend/public'))
     app.use('/api', limiter);
 
     app.get('/api', async (req, res) => {

@@ -23,9 +23,9 @@
         waiting = true;
 
         const res = await fetch('/api?address=' + address);
-        data = JSON.stringify(res);
+        data = await res.body.json();
 
-        success = res.status == 200;
+        success = (res.status == 200);
         done = true;
         waiting = false;
     }

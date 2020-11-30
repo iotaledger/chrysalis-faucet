@@ -16,7 +16,7 @@ async function run() {
     const account = await manager.createAccount({
       mnemonic,
       alias: 'Faucet pool',
-      clientOptions: { node: 'https://api.hornet01.alphanet.iota.cafe/' }
+      clientOptions: { node: process.env.NODE_URL }
     })
 
     console.log('alias', account.alias())

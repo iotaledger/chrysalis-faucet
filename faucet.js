@@ -59,6 +59,7 @@ async function run() {
         if(!req.query.address || req.query.address.length != 63) {
             res.status(400);
             res.send({'message': 'Invalid address provided!'})
+            return;
         }
         
         const node_res = await synced.send(req.query.address, amount);

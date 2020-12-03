@@ -15,3 +15,6 @@ Now run the initialization first, once:
 After this is succesful you created your Wallet account and you are ready to start the faucet.
 
 `node faucet`
+
+Note: the frontend is already served by faucet.js once it synced, you don't need to run it seperately.
+You just need to `npm build` inside frontend if you make any changes to it.

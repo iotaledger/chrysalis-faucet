@@ -6,7 +6,7 @@
     let success = false;
     let data = null;
     const explorer = 'https://tangle-explorer.dag.sh/chrysalis/';
-    
+	
     function validate(event) {
         done = false;
         if ((address.length == 63 && address[3] == '1') || address.length == 64 && address[4] == '1' ) {
@@ -22,8 +22,8 @@
         }
         waiting = true;
 
-        const res = await fetch('/api?address=' + address);
-        data = await res.body.json();
+        const res = await fetch(`/api?address=${address}`);
+        data = await res.json();
 
         success = (res.status == 200);
         done = true;

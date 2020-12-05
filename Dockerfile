@@ -68,6 +68,4 @@ RUN cd wallet.rs/bindings/node && \
     cd /app && \
     npm link iota-wallet
 
-RUN echo "Be sure to set the environment variables or create a new .env inside the container!"
-
 ENTRYPOINT ["/bin/bash"]

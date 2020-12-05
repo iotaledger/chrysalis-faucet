@@ -50,7 +50,11 @@ RUN git clone https://github.com/iotaledger/wallet.rs && \
     cd /app && \
     npm link iota-wallet
 
-FROM node:12.20-buster
+FROM node:12.20-buster-slim
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 EXPOSE 3000/tcp
 EXPOSE 80/tcp

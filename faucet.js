@@ -59,6 +59,7 @@ async function run() {
         }
         
         const node_res = await synced.send(req.query.address, amount);
+        console.log(node_res);
         res.send({'message': 'Faucet tokens sent!', 'data': node_res})
     });
 

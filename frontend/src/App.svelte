@@ -3,6 +3,7 @@
     let valid = false;
     let done = false;
     let address = '';
+    let message_id = '';
     let success = false;
     let data = null;
     const explorer = 'https://tangle-explorer.dag.sh/chrysalis/';
@@ -24,10 +25,12 @@
 
         const res = await fetch(`/api?address=${address}`);
         data = await res.json();
-
+        
         success = (res.status == 200);
         done = true;
         waiting = false;
+        message_id = data.data.id;
+        address = '';
     }
 
 </script>
@@ -39,7 +42,7 @@
     {#if done}
         <div class="warning">
             {#if success}
-                {data.message}<br /><a href="{explorer}{address}">{address}!</a>
+                {data.message}<br /><a href="{explorer}message/{message_id}">{message_id}</a>
             {:else}
                 {data.message}
             {/if}
@@ -107,6 +110,7 @@
         border-radius: 8px;
         padding: 10px 20px;
         margin-top: 1em;
+        word-break: break-word;
     }
     
 

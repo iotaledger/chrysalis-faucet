@@ -1,15 +1,11 @@
 require('dotenv').config();
 
 async function run() {
-    
-    if(process.env.SEED_MNEMONIC) {
-        console.log('SEED_MNEMONIC is still there, back it up securely and remove it first please!');
-        process.exit(1);
-    }
-
-    const { AccountManager } = require('iota-wallet')
-    const manager = new AccountManager('./faucet-database')
-    manager.setStrongholdPassword(process.env.STRONGHOLD_PASSWORD)
+    const { AccountManager, StorageType } = require('iota-wallet')
+    const manager = new AccountManager({
+        storagePath: './faucet-database',
+        storageType: StorageType.Sqlite
+    })
 
     //const account_id = process.env.STRONGHOLD_ACCOUNT_ID.split(',').map(Number);
     console.log(manager.getAccounts())

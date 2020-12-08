@@ -18,3 +18,11 @@ After this is succesful you created your Wallet account and you are ready to sta
 
 Note: the frontend is already served by faucet.js once it synced, you don't need to run it seperately.
 You just need to `npm build` inside frontend if you make any changes to it.
+
+## Docker
+```bash
+docker build . -t chrysalis-faucet
+docker run -it -v $(pwd)/.env:/app/.env -p 80:80 -p 3000:3000 chrysalis-faucet
+```
+
+By mounting the `.env` file, you can edit it from the host filesystem and those changes will be mirrored inside the container

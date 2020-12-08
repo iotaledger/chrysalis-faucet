@@ -1,22 +1,19 @@
 require('dotenv').config();
 
 async function run() {
+    const { AccountManager, StorageType, SignerType } = require('iota-wallet')
+    const manager = new AccountManager({
+        storagePath: './faucet-database',
+        storageType: StorageType.Sqlite
+    })
     
-    if(process.env.STRONGHOLD_ACCOUNT_ID) {
-        console.log('Stronghold Account ID already set, seems like you already initialized');
-        process.exit(1);
-    }
-
-    const { AccountManager } = require('iota-wallet')
-    const manager = new AccountManager('./faucet-database')
-    manager.setStrongholdPassword(process.env.STRONGHOLD_PASSWORD)
-    
-    const mnemonic = process.env.SEED_MNEMONIC
+    const mnemonic = process.env.IOTA_WALLET_MNEMONIC
     
     const account = await manager.createAccount({
       mnemonic,
       alias: 'Faucet pool',
-      clientOptions: { node: process.env.NODE_URL }
+      clientOptions: { node: process.env.NODE_URL },
+      signerType: SignerType.EnvMnemonic
     })
 
     console.log('alias', account.alias())
@@ -29,7 +26,7 @@ async function run() {
     console.log('acc spent addresses', account.listAddresses(false))
     console.log('acc unspent addresses', account.listAddresses(true))
 
-    console.log('All good! You can now run the faucet after removing the SEED_MNEMONIC from .env');
+    console.log('All good! You can now run the faucet');
 }
 
 run()

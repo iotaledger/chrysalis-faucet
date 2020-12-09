@@ -47,11 +47,13 @@ async function run() {
         message: {'message': `You can only request tokens from the faucet once every ${secs} seconds.`}
     });
     
+    app.set('trust proxy', true);
     app.use(express.static('frontend/public'))
     app.use('/api', limiter);
 
     app.get('/api', async (req, res) => {
-
+        
+        console.log('API called by ', req.ip, req.ips);
         if(!req.query.address || req.query.address.length != 63) {
             res.status(400);
             res.send({'message': 'Invalid address provided!'})

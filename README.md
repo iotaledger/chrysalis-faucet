@@ -6,6 +6,9 @@ This faucet allows you to hand out IOTA (Chrysalis phase 2) tokens to users requ
 
 `npm install`
 
+Note: You need to have the node bindings for wallet.rs installed and linked as well; For instructions on
+how to do this from source go to https://github.com/iotaledger/wallet.rs/tree/develop/bindings/node
+
 Copy `.env.example` to `.env` and fill in the variables; Make sure you have a valid and backed up 24-word mnemonic as a seed.
 
 Now run the initialization first, once:

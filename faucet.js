@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 async function run() {
-    const { AccountManager, StorageType } = require('iota-wallet')
+    const { AccountManager, StorageType, RemainderValueStrategy } = require('iota-wallet')
     const manager = new AccountManager({
         storagePath: './faucet-database',
         storageType: StorageType.Sqlite
@@ -60,7 +60,11 @@ async function run() {
             return;
         }
         
-        const node_res = await synced.send(req.query.address, amount);
+        const node_res = await synced.send(
+            req.query.address,
+            amount, 
+            RemainderValueStrategy.reuseAddress()
+        );
         console.log(node_res);
         res.send({'message': 'Faucet tokens sent!', 'data': node_res})
     });

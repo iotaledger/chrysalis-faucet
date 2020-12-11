@@ -6,7 +6,7 @@
     let message_id = '';
     let success = false;
     let data = null;
-    const explorer = 'https://tangle-explorer.dag.sh/chrysalis/';
+    const explorer = 'https://explorer.iota.org/chrysalis/';
 	
     function validate(event) {
         done = false;

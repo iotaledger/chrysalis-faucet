@@ -29,7 +29,7 @@
         success = (res.status == 200);
         done = true;
         waiting = false;
-        message_id = data.data.id;
+        message_id = data.data ? data.data.id : '';
         address = '';
     }
 

@@ -60,13 +60,20 @@ async function run() {
             return;
         }
         
-        const node_res = await synced.send(
-            req.query.address,
-            amount, 
-            RemainderValueStrategy.reuseAddress()
-        );
-        console.log(node_res);
-        res.send({'message': 'Faucet tokens sent!', 'data': node_res})
+        try {
+            const node_res = await synced.send(
+                req.query.address,
+                amount, 
+                RemainderValueStrategy.reuseAddress()
+            );
+            console.log(node_res);
+            res.send({'message': 'Faucet tokens sent!', 'data': node_res})
+        } catch (e) {
+            console.log('ERROR', e);
+            res.status(503);
+            res.send({'message': 'Out of service, please try again later', 'error': e})
+            return;
+        }
     });
 
     app.listen(port, () => {

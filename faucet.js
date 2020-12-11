@@ -31,6 +31,9 @@ async function run() {
     const s_addresses = account.listAddresses(false)
     console.log(s_addresses)
 
+    // Start background process
+    manager.startBackgroundSync();
+
     // Webserver part
 
     const express = require('express')

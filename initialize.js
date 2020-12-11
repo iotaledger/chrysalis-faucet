@@ -12,7 +12,7 @@ async function run() {
     const account = await manager.createAccount({
       mnemonic,
       alias: 'Faucet pool',
-      clientOptions: { node: process.env.NODE_URL },
+      clientOptions: { node: process.env.NODE_URL, localPow: false },
       signerType: SignerType.EnvMnemonic
     })
 

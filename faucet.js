@@ -1,13 +1,20 @@
 require('dotenv').config();
 
 async function run() {
-    const { AccountManager, StorageType, RemainderValueStrategy } = require('iota-wallet')
+	const { AccountManager, StorageType, RemainderValueStrategy, initLogger } = require('iota-wallet')
     const manager = new AccountManager({
         storagePath: './faucet-database',
         storageType: StorageType.Sqlite
     })
 
-    //const account_id = process.env.STRONGHOLD_ACCOUNT_ID.split(',').map(Number);
+    initLogger({
+      color_enabled: true,
+      outputs: [{
+        name: './faucet.log',
+        level: 'debug'
+      }]
+    })
+
     console.log(manager.getAccounts())
     const account = manager.getAccountByAlias('Faucet pool')
 

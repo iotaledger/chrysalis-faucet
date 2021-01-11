@@ -6,15 +6,14 @@ async function run() {
         storagePath: './faucet-database',
         storageType: StorageType.Sqlite
     })
-    
-    const mnemonic = process.env.IOTA_WALLET_MNEMONIC
+    manager.setStrongholdPassword(process.env.STRONGHOLD_PASSWORD)
+    manager.storeMnemonic(SignerType.Stronghold, process.env.IOTA_WALLET_MNEMONIC)
     
     const account = await manager.createAccount({
-      mnemonic,
       alias: 'Faucet pool',
-      clientOptions: { node: process.env.NODE_URL, localPow: false },
-      signerType: SignerType.EnvMnemonic
+      clientOptions: { node: process.env.NODE_URL, localPow: false }
     })
+    console.log('account', account)
 
     console.log('alias', account.alias())
     console.log('balance', account.availableBalance())

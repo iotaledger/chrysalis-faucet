@@ -15,6 +15,8 @@ async function run() {
       }]
     })
 
+    manager.setStrongholdPassword(process.env.STRONGHOLD_PASSWORD)
+
     console.log(manager.getAccounts())
     const account = manager.getAccountByAlias('Faucet pool')
 
@@ -37,9 +39,6 @@ async function run() {
     
     const s_addresses = account.listAddresses(false)
     console.log(s_addresses)
-
-    // Start background process
-    manager.startBackgroundSync();
 
     // Webserver part
 
@@ -74,7 +73,12 @@ async function run() {
             const node_res = await synced.send(
                 req.query.address,
                 amount, 
-                RemainderValueStrategy.reuseAddress()
+                {
+                    remainderValueStrategy: RemainderValueStrategy.reuseAddress(),
+                    indexation: {
+                        index: 'FAUCET'
+                    }
+                }
             );
             console.log(node_res);
             res.send({'message': 'Faucet tokens sent!', 'data': node_res})

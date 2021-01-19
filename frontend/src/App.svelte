@@ -55,7 +55,7 @@
                 {#if valid}
                     Click the request button to recieve your coins
                 {:else}
-                    Please enter a valid IOTA address (iot1...)
+                    Please enter a valid IOTA address (atoi1...)
                 {/if}
             {/if}
         </div>

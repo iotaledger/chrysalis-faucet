@@ -10,7 +10,7 @@
 	
     function validate(event) {
         done = false;
-        if ((address.length == 63 && address[3] == '1') || address.length == 64 && address[4] == '1' ) {
+        if (address.length == 64 && address.indexOf('atoi1') === 0) {
             valid = true;
         } else {
             valid = false;

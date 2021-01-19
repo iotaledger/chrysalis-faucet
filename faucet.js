@@ -63,13 +63,14 @@ async function run() {
     app.get('/api', async (req, res) => {
         
         console.log('API called by ', req.ip, req.ips);
-        if(!req.query.address || req.query.address.length != 63) {
+        if(!req.query.address || req.query.address.length != 64 || req.query.address.indexOf('atoi1') !== 0) {
             res.status(400);
             res.send({'message': 'Invalid address provided!'})
             return;
         }
         
         try {
+            manager.setStrongholdPassword(process.env.STRONGHOLD_PASSWORD)
             const node_res = await synced.send(
                 req.query.address,
                 amount, 

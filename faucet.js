@@ -21,8 +21,6 @@ async function run() {
     const account = manager.getAccount('Faucet pool')
 
     console.log('alias', account.alias())
-    console.log('available balance', account.availableBalance())
-    //console.log('total balance', account.totalBalance())
     console.log('syncing...')
     
     const synced = await account.sync({})

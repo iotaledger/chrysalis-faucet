@@ -11,12 +11,11 @@ async function run() {
     
     const account = await manager.createAccount({
       alias: 'Faucet pool',
-      clientOptions: { node: process.env.NODE_URL, localPow: false }
+      clientOptions: { nodes: [process.env.NODE_URL], localPow: false, network: 'testnet3' }
     })
     console.log('account', account)
 
     console.log('alias', account.alias())
-    console.log('balance', account.availableBalance())
 
     const synced = await account.sync({})
 

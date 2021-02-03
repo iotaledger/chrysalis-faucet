@@ -18,7 +18,7 @@ async function run() {
     manager.setStrongholdPassword(process.env.STRONGHOLD_PASSWORD)
 
     console.log(manager.getAccounts())
-    const account = manager.getAccountByAlias('Faucet pool')
+    const account = manager.getAccount('Faucet pool')
 
     console.log('alias', account.alias())
     console.log('available balance', account.availableBalance())

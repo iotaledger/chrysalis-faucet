@@ -11,7 +11,7 @@ async function run() {
     
     const account = await manager.createAccount({
       alias: 'Faucet pool',
-      clientOptions: { nodes: [process.env.NODE_URL], localPow: false, network: 'testnet3' }
+      clientOptions: { nodes: [process.env.NODE_URL], localPow: false, network: 'testnet4' }
     })
     console.log('account', account)
 

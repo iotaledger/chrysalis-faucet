@@ -53,7 +53,7 @@
                 Please wait...
             {:else}
                 {#if valid}
-                    Click the request button to recieve your coins
+                    Click the request button to receive your coins
                 {:else}
                     Please enter a valid IOTA address (atoi1...)
                 {/if}

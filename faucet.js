@@ -22,8 +22,8 @@ async function run() {
 
     console.log('alias', account.alias())
     console.log('syncing...')
-    
-    const synced = await account.sync({})
+
+    const synced = await account.sync()
 
     //console.log('Account messages: ', account.listMessages())
     const addresses = account.listAddresses(true)
@@ -69,7 +69,7 @@ async function run() {
         
         try {
             manager.setStrongholdPassword(process.env.STRONGHOLD_PASSWORD)
-            const node_res = await account.send(
+            const node_res = await synced.send(
                 req.query.address,
                 amount, 
                 {

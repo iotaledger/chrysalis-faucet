@@ -2,6 +2,7 @@
     let waiting = false;
     let valid = false;
     let done = false;
+    let timeout = false;
     let address = '';
     let message_id = '';
     let success = false;
@@ -17,19 +18,34 @@
         }
     }
 
-    async function requestTokens(event) {
-        if(waiting) {
+    async function fetchWithTimeout(url, timeout = 5000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeout);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timer);
+        return res;
+    }
+
+    async function requestTokens(_event) {
+        if (waiting) {
             return false;
         }
         waiting = true;
+        let res = null;
 
-        const res = await fetch(`/api?address=${address}`);
-        data = await res.json();
+        try {
+            res = await fetchWithTimeout(`http://localhost:3000/api?address=${address}`);   
+            data = await res.json();         
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                timeout = true;
+            }
+        }
         
-        success = (res.status == 200);
+        success = res && res.status === 200;
         done = true;
         waiting = false;
-        message_id = data.data ? data.data.id : '';
+        message_id = data && data.data ? data.data.id : '';
         address = '';
     }
 
@@ -43,6 +59,8 @@
         <div class="warning">
             {#if success}
                 {data.message}<br /><a href="{explorer}message/{message_id}">{message_id}</a>
+            {:else if timeout}
+                The faucet may be out of service. Please try again later or use the  <a href="https://faucet.tanglekit.de/">TangleKit faucet</a> in the meantime.
             {:else}
                 {data.message}
             {/if}

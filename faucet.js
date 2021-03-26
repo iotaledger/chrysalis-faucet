@@ -1,10 +1,9 @@
 require('dotenv').config();
 
 async function run() {
-	const { AccountManager, StorageType, RemainderValueStrategy, initLogger } = require('iota-wallet')
+	const { AccountManager, RemainderValueStrategy, initLogger } = require('@iota/wallet')
     const manager = new AccountManager({
-        storagePath: './faucet-database',
-        storageType: StorageType.Sqlite
+        storagePath: './faucet-database'
     })
 
     initLogger({

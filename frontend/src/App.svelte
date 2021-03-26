@@ -34,7 +34,7 @@
         let res = null;
 
         try {
-            res = await fetchWithTimeout(`http://localhost:3000/api?address=${address}`);   
+            res = await fetchWithTimeout(`/api?address=${address}`);   
             data = await res.json();         
         } catch (error) {
             if (error.name === 'AbortError') {

@@ -68,14 +68,15 @@ async function run() {
         
         try {
             manager.setStrongholdPassword(process.env.STRONGHOLD_PASSWORD)
-            const node_res = await synced.send(
+            const node_res = await account.send(
                 req.query.address,
                 amount, 
                 {
                     remainderValueStrategy: RemainderValueStrategy.reuseAddress(),
                     indexation: {
                         index: 'FAUCET'
-                    }
+                    },
+                    skipSync: true
                 }
             );
             console.log(node_res);

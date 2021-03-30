@@ -1,4 +1,4 @@
-FROM node:12.20-buster AS build
+FROM node:12.21-buster AS build
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git ca-certificates gcc libc6-dev wget libssl-dev cmake && \
@@ -50,7 +50,7 @@ RUN git clone https://github.com/iotaledger/wallet.rs && \
     cd /app && \
     npm link iota-wallet
 
-FROM node:12.20-buster-slim
+FROM node:12.21-buster-slim
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends libssl-dev && \

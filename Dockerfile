@@ -43,7 +43,7 @@ ENV RUSTFLAGS="-L /usr/lib/x86_64-linux-gnu"
 
 # Install wallet.rs bindings
 RUN git clone https://github.com/iotaledger/wallet.rs && \
-    cd wallet.rs/bindings/node && \
+    cd wallet.rs/bindings/nodejs && \
     npm install && \
     npx neon build --release && \
     npm link && \

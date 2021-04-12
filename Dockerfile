@@ -1,4 +1,4 @@
-FROM node:12.20-buster AS build
+FROM node:12.21-buster AS build
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git ca-certificates gcc libc6-dev wget libssl-dev cmake && \
@@ -9,7 +9,7 @@ RUN apt-get update && \
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH \
-    RUST_VERSION=1.48.0
+    RUST_VERSION=1.51.0
 
 RUN set -eux; \
     dpkgArch="$(dpkg --print-architecture)"; \
@@ -43,14 +43,14 @@ ENV RUSTFLAGS="-L /usr/lib/x86_64-linux-gnu"
 
 # Install wallet.rs bindings
 RUN git clone https://github.com/iotaledger/wallet.rs && \
-    cd wallet.rs/bindings/node && \
+    cd wallet.rs/bindings/nodejs && \
     npm install && \
     npx neon build --release && \
     npm link && \
     cd /app && \
     npm link iota-wallet
 
-FROM node:12.20-buster-slim
+FROM node:12.21-buster-slim
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends libssl-dev && \

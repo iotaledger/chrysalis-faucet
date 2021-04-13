@@ -1,10 +1,9 @@
 require('dotenv').config();
 
 async function run() {
-	const { AccountManager, StorageType, RemainderValueStrategy, initLogger } = require('@iota/wallet')
+	const { AccountManager, RemainderValueStrategy, initLogger } = require('@iota/wallet')
     const manager = new AccountManager({
-        storagePath: './faucet-database',
-        storageType: StorageType.Sqlite
+        storagePath: './faucet-database'
     })
 
     initLogger({
@@ -22,8 +21,8 @@ async function run() {
 
     console.log('alias', account.alias())
     console.log('syncing...')
-    
-    const synced = await account.sync({})
+
+    const synced = await account.sync()
 
     //console.log('Account messages: ', account.listMessages())
     const addresses = account.listAddresses(true)
@@ -76,7 +75,8 @@ async function run() {
                     remainderValueStrategy: RemainderValueStrategy.reuseAddress(),
                     indexation: {
                         index: 'FAUCET'
-                    }
+                    },
+                    skipSync: true
                 }
             );
             console.log(node_res);

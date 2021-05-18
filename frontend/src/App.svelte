@@ -7,7 +7,7 @@
     let message_id = '';
     let success = false;
     let data = null;
-    const explorer = 'https://explorer.iota.org/chrysalis/';
+    const explorer = 'https://explorer.iota.org/testnet/';
 	
     function validate(event) {
         done = false;

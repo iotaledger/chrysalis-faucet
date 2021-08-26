@@ -1,20 +1,22 @@
 {
-  "name": "iota-chrysalis-faucet",
+  "name": "svelte-app",
   "version": "1.0.0",
-  "description": "Faucet for IOTA Chrysalis phase 2",
-  "main": "faucet.js",
-  "directories": {
-    "lib": "lib"
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "start": "sirv public"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^16.0.0",
+    "@rollup/plugin-node-resolve": "^10.0.0",
+    "rollup": "^2.3.4",
+    "rollup-plugin-css-only": "^3.0.0",
+    "rollup-plugin-livereload": "^2.0.0",
+    "rollup-plugin-svelte": "^7.0.0",
+    "rollup-plugin-terser": "^7.0.0",
+    "svelte": "^3.0.0"
   },
   "dependencies": {
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
-    "express-rate-limit": "^5.2.3"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Dave de Fijter - IOTA Foundation",
-  "license": "Apache-2.0"
+    "sirv-cli": "^1.0.0"
+  }
 }

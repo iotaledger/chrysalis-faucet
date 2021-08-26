@@ -1,105 +1,28 @@
-*Looking for a shareable component template? Go here --> [sveltejs/component-template](https://github.com/sveltejs/component-template)*
+# IOTA Chrysalis Faucet
 
----
+This faucet allows you to hand out IOTA (Chrysalis phase 2) tokens to users requesting it.
 
-# svelte app
+It is directly hosted by the HORNET faucet plugin.
 
-This is a project template for [Svelte](https://svelte.dev) apps. It lives at https://github.com/sveltejs/template.
+## Prerequisites
 
-To create a new project based on this template using [degit](https://github.com/Rich-Harris/degit):
+To deploy your own version of the Faucet, you need to have at least [version 14 of Node.js](https://nodejs.org/en/download/) installed on your device.
 
-```bash
-npx degit sveltejs/template svelte-app
-cd svelte-app
-```
-
-*Note that you will need to have [Node.js](https://nodejs.org) installed.*
-
-
-## Get started
-
-Install the dependencies...
+To check if you have Node.js installed, run the following command:
 
 ```bash
-cd svelte-app
-npm install
+node -v
 ```
 
-...then start [Rollup](https://rollupjs.org):
+If Node.js is installed, you should see the version that's installed.
 
-```bash
-npm run dev
-```
+# Getting Started
 
-Navigate to [localhost:5000](http://localhost:5000). You should see your app running. Edit a component file in `src`, save it, and reload the page to see your changes.
+You need to run a local version of the Hornet node software from the main branch [https://github.com/gohornet/hornet/](https://github.com/gohornet/hornet/)
 
-By default, the server will only respond to requests from localhost. To allow connections from other computers, edit the `sirv` commands in package.json to include the option `--host 0.0.0.0`.
-
-If you're using [Visual Studio Code](https://code.visualstudio.com/) we recommend installing the official extension [Svelte for VS Code](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode). If you are using other editors you may need to install a plugin in order to get syntax highlighting and intellisense.
-
-## Building and running in production mode
-
-To create an optimised version of the app:
-
-```bash
-npm run build
-```
-
-You can run the newly built app with `npm run start`. This uses [sirv](https://github.com/lukeed/sirv), which is included in your package.json's `dependencies` so that the app will work when you deploy to platforms like [Heroku](https://heroku.com).
-
-
-## Single-page app mode
-
-By default, sirv will only respond to requests that match files in `public`. This is to maximise compatibility with static fileservers, allowing you to deploy your app anywhere.
-
-If you're building a single-page app (SPA) with multiple routes, sirv needs to be able to respond to requests for *any* path. You can make it so by editing the `"start"` command in package.json:
-
-```js
-"start": "sirv public --single"
-```
-
-## Using TypeScript
-
-This template comes with a script to set up a TypeScript development environment, you can run it immediately after cloning the template with:
-
-```bash
-node scripts/setupTypeScript.js
-```
-
-Or remove the script via:
-
-```bash
-rm scripts/setupTypeScript.js
-```
-
-## Deploying to the web
-
-### With [Vercel](https://vercel.com)
-
-Install `vercel` if you haven't already:
-
-```bash
-npm install -g vercel
-```
-
-Then, from within your project folder:
-
-```bash
-cd public
-vercel deploy --name my-project
-```
-
-### With [surge](https://surge.sh/)
-
-Install `surge` if you haven't already:
-
-```bash
-npm install -g surge
-```
-
-Then, from within your project folder:
-
-```bash
-npm run build
-surge public my-project.surge.sh
-```
+1. Make sure to enable the faucet plugin and the set the `faucet.website.enabled` to true in Hornet config, to enable the node to serve the website.
+2. Install all needed npm modules via `npm install`.
+3. Build the project by running `npm run build` within the repo root directory.
+4. Run `packr2` within the repo root directory.
+5. Build and start hornet.
+6. Using default port config, you should now be able to access the dashboard under http://127.0.0.1:8091

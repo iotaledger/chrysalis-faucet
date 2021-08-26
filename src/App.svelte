@@ -4,9 +4,9 @@
     let done = false;
     let timeout = false;
     let address = "";
-    let faucetInfo;
     let success = false;
     let data = null;
+    let errormsg = null;
 
     function validate(event) {
         done = false;
@@ -22,7 +22,9 @@
             return false;
         }
         waiting = true;
-        let res = "Sending request...";
+        let res = null;
+        data = null;
+        errormsg = "Sending request...";
 
         try {
             res = await fetch(`/api/plugins/faucet/enqueue`, {
@@ -35,11 +37,19 @@
                     address: address,
                 }),
             });
-            data = await res.json();
+            if (res.status === 202) {
+                errormsg = "OK";
+            } else if (res.status === 429) {
+                errormsg = "Too many requests. Try again later!";
+            } else {
+                data = await res.json();
+                errormsg = data.error.message;
+            }
         } catch (error) {
             if (error.name === "AbortError") {
                 timeout = true;
             }
+            errormsg = error
         }
 
         success = res && res.status === 202;
@@ -48,23 +58,6 @@
         address = "";
     }
 
-    requestFaucetInfo();
-    setInterval(function () {
-        requestFaucetInfo();
-    }, 10000);
-
-    async function requestFaucetInfo() {
-        let res = null;
-        try {
-            res = await fetch("/api/plugins/faucet/info");
-            let data = await res.json();
-            faucetInfo = data.data;
-        } catch (error) {
-            if (error.name === "AbortError") {
-                timeout = true;
-            }
-        }
-    }
 </script>
 
 <main>
@@ -73,20 +66,12 @@
     <p class="help">
         This service distributes tokens to the requested IOTA address.
     </p>
-    {#if typeof faucetInfo != "undefined"}
-        <div class="faucetInfo">Faucet info:</div>
-        <div class="faucetInfo">Address: {faucetInfo.address}</div>
-        <div class="faucetInfo">Balance: {faucetInfo.balance}</div>
-    {/if}
     {#if done}
         <div class="warning">
             {#if success}
-                <div>IOTA will be sent</div>
+                <div>IOTA will be sent to your address!</div>
             {:else}
-                {"Eror:" + JSON.stringify(data)}
-                {setTimeout(() => {
-                    done = false;
-                }, 5000)}
+                <div>{errormsg}</div>
             {/if}
         </div>
     {:else}
@@ -203,11 +188,5 @@
         outline: none;
         background: #fff;
         font-size: 12px;
-    }
-
-    .faucetInfo {
-        font-size: 13px;
-        color: rgb(108, 122, 148);
-        font-weight: 400;
     }
 </style>

@@ -48,6 +48,7 @@
         address = "";
     }
 
+    requestFaucetInfo();
     setInterval(function () {
         requestFaucetInfo();
     }, 10000);

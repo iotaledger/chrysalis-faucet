@@ -27,7 +27,7 @@
         errormsg = "Sending request...";
 
         try {
-            res = await fetch(`/api/plugins/faucet/v1/enqueue`, {
+            res = await fetch(`/api/enqueue`, {
                 method: "POST",
                 headers: {
                     Accept: "application/json",

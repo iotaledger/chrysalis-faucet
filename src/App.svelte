@@ -1,192 +1,129 @@
 <script>
-    let waiting = false;
-    let valid = false;
-    let done = false;
-    let timeout = false;
-    let address = "";
-    let success = false;
-    let data = null;
-    let errormsg = null;
+    import { onMount } from "svelte";
 
-    function validate(event) {
-        done = false;
-        if (address.length == 64 && address.indexOf("atoi1") === 0) {
-            valid = true;
+    import Page from "./components/Page.svelte";
+    import Loader from "./components/Loader.svelte";
+    import ErrorPage from "./components/ErrorPage.svelte";
+    import { capitalize } from "./utils/utils.js";
+    let errorMessage = null;
+
+    let network = null;
+    let networkIco = "iota-fav.ico";
+    const setNetwork = (token) => {
+        if (token === "shimmer" || token === "iota") {
+            network = token;
+            networkIco = `${token}-fav.ico`;
         } else {
-            valid = false;
+            network = "whitelabel";
         }
-    }
+        setTheme(token);
+    };
 
-    async function requestTokens(_event) {
-        if (waiting) {
-            return false;
+    const setTheme = (token) => {
+        if (token === "shimmer") {
+            document.body.classList.add("shimmer");
+        } else if (token === "iota") {
+            document.body.classList.remove("shimmer");
+        } else {
+            document.body.classList.remove("shimmer");
         }
-        waiting = true;
-        let res = null;
-        data = null;
-        errormsg = "Sending request...";
+    };
 
+    const networkDetector = (data) => {
+        if (data.tokenName) {
+            return data.tokenName.toLowerCase();
+        } else {
+            if (data.address.indexOf("rms1") === 0) return "shimmer";
+            if (data.address.indexOf("atoi1") === 0) return "iota";
+        }
+        return "whitelabel"
+    };
+
+    const getNetwork = async () => {
+        // setTimeout(() => {
+        //     return setNetwork("shimmer");
+        // }, 2000);
+
+        const endpoint =
+            "https://faucet.alphanet.iotaledger.net/api/plugins/faucet/v1/info";
         try {
-            res = await fetch(`/api/enqueue`, {
-                method: "POST",
-                headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    address: address,
-                }),
-            });
-            if (res.status === 202) {
-                errormsg = "OK";
+            const res = await fetch(endpoint);
+
+            if (res.status === 200) {
+                const data = await res.json();
+                // setTimeout(() => {
+                // errorMessage = "Could not obtain the network from the node.";
+                // }, 2000);
+
+                return setNetwork(networkDetector(data));
             } else if (res.status === 429) {
-                errormsg = "Too many requests. Try again later!";
-            } else {
-                data = await res.json();
-                errormsg = data.error.message;
+                errorMessage = "Too many requests. Try again later!";
             }
         } catch (error) {
             if (error.name === "AbortError") {
                 timeout = true;
             }
-            errormsg = error
+            errorMessage = error;
         }
+    };
+    onMount(async () => {
+        getNetwork();
+    });
 
-        success = res && res.status === 202;
-        done = true;
-        waiting = false;
-        address = "";
-    }
-
+    const networkParams = {
+        shimmer: {
+            token: "Shimmer",
+            hint: "rms1...",
+        },
+        iota: {
+            token: "IOTA",
+            hint: "atoi1...",
+        },
+        whitelabel: {
+            token: "Whitelabel",
+            hint: "wlab1...",
+        },
+    };
 </script>
 
+<svelte:head>
+    <title>{capitalize(network || "iota")} Faucet</title>
+    <link rel="icon" type="image/png" href={networkIco} />
+</svelte:head>
 <main>
-    <p class="welcome">Welcome to</p>
-    <h1>IOTA Faucet</h1>
-    <p class="help">
-        This service distributes tokens to the requested IOTA address.
-    </p>
-    {#if done}
-        <div class="warning">
-            {#if success}
-                <div>IOTA will be sent to your address!</div>
-            {:else}
-                <div>{errormsg}</div>
-            {/if}
+    <div class="content">
+        <div class="row">
+            <div class="col-xs-12">
+                <img
+                    src={`./${
+                        network == "iota" || network == "shimmer"
+                            ? network
+                            : "iota"
+                    }.svg`}
+                    class="logo"
+                    alt="IOTA"
+                />
+            </div>
         </div>
-    {:else}
-        <div class="warning">
-            {#if waiting}
-                Please wait...
-            {:else if valid}
-                Click the request button to receive your coins
-            {:else}
-                Please enter a valid IOTA address (atoi1...)
-            {/if}
+
+        <div class="row contentrow">
+            <div class="col-lg-4">
+                {#if errorMessage}
+                    <ErrorPage {errorMessage} />
+                {:else if network}
+                    <Page networkParams={networkParams[network]} />
+                {:else}
+                    <Loader />
+                {/if}
+            </div>
         </div>
-    {/if}
-    <div class="iota-input">
-        <label for="address">IOTA Address</label>
-        <input
-            type="text"
-            bind:value={address}
-            on:keyup={validate}
-            disabled={waiting}
-        />
-    </div>
-    <div class="right">
-        <button
-            type="button"
-            on:click={requestTokens}
-            class:disabled={waiting || !valid}>Request</button
-        >
     </div>
 </main>
 
 <style>
     main {
-        margin-left: 10%;
-    }
-
-    .right {
-        text-align: right;
-    }
-
-    .right button {
-        background: #108cff;
-        cursor: pointer;
-        border-radius: 10px;
-        padding: 15px 50px;
-        color: #fff;
-        font-size: 13px;
-        margin: 20px 0 50px;
-        border: none;
-    }
-
-    .right button.disabled {
-        opacity: 0.5;
-    }
-
-    .help {
-        font-size: 13px;
-        color: #9aadce;
-        line-height: 160%;
-        font-weight: 400;
-        margin-top: 1em;
-        margin-bottom: 2em;
-    }
-
-    .warning {
-        font-size: 12px;
-        color: #25395f;
-        background: #f6f9ff;
-        border-radius: 8px;
-        padding: 10px 20px;
-        margin-top: 1em;
-        word-break: break-word;
-    }
-
-    .welcome {
-        color: #108cff;
-        text-transform: uppercase;
-        font-size: 14px;
-        margin: 0;
-    }
-
-    h1 {
-        color: #25395f;
-        font-size: 32px;
-        font-family: "DMBold", sans-serif;
-        letter-spacing: 1px;
-        font-weight: 700;
-        margin: 0;
-    }
-
-    .iota-input {
-        width: 100%;
-        padding: 0;
-        position: relative;
-        background: #fff;
-        margin-top: 10px;
-    }
-
-    .iota-input label {
-        font-size: 10px;
-        line-height: 12px;
-        color: #9aadce;
-        position: absolute;
-        top: 7px;
-        left: 20px;
-    }
-    .iota-input input {
-        width: 100%;
-        border: none;
-        padding: 20px 20px 10px;
-        border: solid 1px #d8e3f5;
-        border-radius: 10px;
-        margin: 0;
-        outline: none;
-        background: #fff;
-        font-size: 12px;
+        background-color: var(--bg-color);
+        min-width: 100vw;
+        min-height: 100vh;
     }
 </style>

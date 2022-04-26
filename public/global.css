@@ -18,7 +18,6 @@
 
 
 body {
-    --lol: blue;
     --bg-color: white;
     --primary-color: #108cff;
     --title-color: #25395f;
@@ -27,7 +26,6 @@ body {
 }
 
 body.shimmer {
-    --lol: green;
     --bg-color: rgb(0, 18, 31);
     --primary-color: rgb(0, 224, 202);
     --title-color: white;

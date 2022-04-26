@@ -10,10 +10,17 @@
 
     function validate(event) {
         done = false;
-        if (address.length == 64 && address.indexOf("atoi1") === 0) {
+        valid = false;
+        if(address.length == 63 && address.startsWith("rms1q"))  {
             valid = true;
-        } else {
-            valid = false;
+        }
+        
+        if(address.length == 44 && address.startsWith("rms1"))  {
+            valid = true;
+        }
+
+        if (address.length == 64 && address.startsWith("atoi1")) {
+            valid = true;
         }
     }
 
@@ -81,7 +88,7 @@
             {:else if valid}
                 Click the request button to receive your coins
             {:else}
-                Please enter a valid IOTA address (atoi1...)
+                Please enter a valid IOTA address (atoi1/rms1...)
             {/if}
         </div>
     {/if}

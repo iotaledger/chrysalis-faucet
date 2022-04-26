@@ -1,10 +1,9 @@
 <script>
-    export let errorMessage;
+  export let errorMessage;
 </script>
 
 <div>
-    <p> There was an error: {errorMessage}</p>
+  <p>There was an error: {errorMessage}</p>
 
-    <button onClick="window.location.reload();">Try again</button>
+  <button onClick="window.location.reload();">Try again</button>
 </div>
-

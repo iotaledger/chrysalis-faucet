@@ -1,125 +1,123 @@
 @font-face {
-    font-family: 'DM';
-    src: url('fonts/dmsans-bold-webfont.woff2') format('woff2'),
-        url('fonts/dmsans-bold-webfont.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-
+  font-family: "DM";
+  src: url("fonts/dmsans-bold-webfont.woff2") format("woff2"),
+    url("fonts/dmsans-bold-webfont.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
 }
 
 @font-face {
-    font-family: 'DMBold';
-    src: url('fonts/dmsans-medium-webfont.woff2') format('woff2'),
-        url('fonts/dmsans-medium-webfont.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-
+  font-family: "DMBold";
+  src: url("fonts/dmsans-medium-webfont.woff2") format("woff2"),
+    url("fonts/dmsans-medium-webfont.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
 }
 
 /* Generic Theme */
 body {
-    --bg-color: white;
-    --primary-color: rgb(102, 106, 247);
-    --primary-text-color: #25395f;
-    --secondary-text-color: #9aadce;
-    --box-color: #f6f9ff;
-    --border-color: #d8e3f5;
+  --bg-color: white;
+  --primary-color: rgb(102, 106, 247);
+  --primary-text-color: #25395f;
+  --secondary-text-color: #9aadce;
+  --box-color: #f6f9ff;
+  --border-color: #d8e3f5;
 }
 
 /* IOTA Theme */
 body.iota {
-    --primary-color: #108cff;
+  --primary-color: #108cff;
 }
 
 /* Shimmer Theme */
 body.shimmer {
-    --bg-color: rgb(6, 26, 40);
-    --primary-color: rgb(0, 224, 202);
-    --primary-text-color: white;
+  --bg-color: rgb(6, 26, 40);
+  --primary-color: rgb(0, 224, 202);
+  --primary-text-color: white;
 }
 
 html,
 body {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-color);
-    min-height: 100vh;
-    min-width: 100vw;
-    overflow-x: hidden;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-color);
+  min-height: 100vh;
+  min-width: 100vw;
+  overflow-x: hidden;
 }
 
 body {
-    color: var(--primary-text-color);
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: "DM", sans-serif;
+  color: var(--primary-text-color);
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "DM", sans-serif;
 }
 
 a {
-    color: var(--primary-color);
-    text-decoration: none;
+  color: var(--primary-color);
+  text-decoration: none;
 }
 
 a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 label {
-    display: block;
+  display: block;
 }
 
 input,
 button,
 select,
 textarea {
-    font-family: inherit;
-    font-size: inherit;
-    -webkit-padding: 0.4em 0;
-    padding: 0.4em;
-    margin: 0 0 0.5em 0;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 2px;
+  font-family: inherit;
+  font-size: inherit;
+  -webkit-padding: 0.4em 0;
+  padding: 0.4em;
+  margin: 0 0 0.5em 0;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 2px;
 }
 
 input:disabled {
-    color: #ccc;
+  color: #ccc;
 }
 
 button {
-    background-color: var(--primary-color);
-    cursor: pointer;
-    border-radius: 10px;
-    padding: 15px 50px;
-    color: white;
-    font-size: 13px;
-    margin: 20px 0 50px;
-    border: none;
-    outline: none;
-    color: #fff;
+  background-color: var(--primary-color);
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 15px 50px;
+  color: white;
+  font-size: 13px;
+  margin: 20px 0 50px;
+  border: none;
+  outline: none;
+  color: #fff;
 }
 
 button:disabled {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 
 .content {
-    max-width: 1280px;
-    margin: 0 auto;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
 .contentrow {
-    margin-top: 70px;
-    padding: 0px 20px;
+  margin-top: 70px;
+  padding: 0px 20px;
 }
 
 h1 {
-    color: var(--primary-text-color);
-    font-size: 32px;
-    font-family: "DMBold", sans-serif;
-    letter-spacing: 1px;
-    font-weight: 700;
-    margin: 0;
+  color: var(--primary-text-color);
+  font-size: 32px;
+  font-family: "DMBold", sans-serif;
+  letter-spacing: 1px;
+  font-weight: 700;
+  margin: 0;
 }

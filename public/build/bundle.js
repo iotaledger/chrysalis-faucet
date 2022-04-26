@@ -623,10 +623,10 @@ var app = (function () {
     			t2 = space();
     			button = element("button");
     			button.textContent = "Try again";
-    			add_location(p, file$3, 5, 4, 59);
+    			add_location(p, file$3, 5, 2, 55);
     			attr_dev(button, "onclick", "window.location.reload();");
-    			add_location(button, file$3, 7, 4, 107);
-    			add_location(div, file$3, 4, 0, 49);
+    			add_location(button, file$3, 7, 2, 100);
+    			add_location(div, file$3, 4, 0, 47);
     		},
     		l: function claim(nodes) {
     			throw new Error_1$1("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -720,7 +720,7 @@ var app = (function () {
 
     const file$2 = "src/components/Faucet.svelte";
 
-    // (75:4) {:else}
+    // (77:2) {:else}
     function create_else_block_1(ctx) {
     	let div;
 
@@ -737,8 +737,8 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			if_block.c();
-    			attr_dev(div, "class", "warning svelte-1u0at7g");
-    			add_location(div, file$2, 75, 8, 2290);
+    			attr_dev(div, "class", "warning svelte-1ueoti6");
+    			add_location(div, file$2, 77, 4, 1950);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -767,14 +767,14 @@ var app = (function () {
     		block,
     		id: create_else_block_1.name,
     		type: "else",
-    		source: "(75:4) {:else}",
+    		source: "(77:2) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (67:4) {#if done}
+    // (69:2) {#if done}
     function create_if_block$1(ctx) {
     	let div;
 
@@ -790,8 +790,8 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			if_block.c();
-    			attr_dev(div, "class", "warning svelte-1u0at7g");
-    			add_location(div, file$2, 67, 8, 2058);
+    			attr_dev(div, "class", "warning svelte-1ueoti6");
+    			add_location(div, file$2, 69, 4, 1762);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -820,14 +820,14 @@ var app = (function () {
     		block,
     		id: create_if_block$1.name,
     		type: "if",
-    		source: "(67:4) {#if done}",
+    		source: "(69:2) {#if done}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (81:12) {:else}
+    // (83:6) {:else}
     function create_else_block_2(ctx) {
     	let t0;
     	let t1;
@@ -867,14 +867,14 @@ var app = (function () {
     		block,
     		id: create_else_block_2.name,
     		type: "else",
-    		source: "(81:12) {:else}",
+    		source: "(83:6) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (79:28) 
+    // (81:22) 
     function create_if_block_3$1(ctx) {
     	let t;
 
@@ -895,14 +895,14 @@ var app = (function () {
     		block,
     		id: create_if_block_3$1.name,
     		type: "if",
-    		source: "(79:28) ",
+    		source: "(81:22) ",
     		ctx
     	});
 
     	return block;
     }
 
-    // (77:12) {#if waiting}
+    // (79:6) {#if waiting}
     function create_if_block_2$1(ctx) {
     	let t;
 
@@ -923,14 +923,14 @@ var app = (function () {
     		block,
     		id: create_if_block_2$1.name,
     		type: "if",
-    		source: "(77:12) {#if waiting}",
+    		source: "(79:6) {#if waiting}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (71:12) {:else}
+    // (73:6) {:else}
     function create_else_block$1(ctx) {
     	let div;
     	let t;
@@ -939,7 +939,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			t = text(/*errorMessage*/ ctx[6]);
-    			add_location(div, file$2, 71, 16, 2211);
+    			add_location(div, file$2, 73, 8, 1887);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -957,14 +957,14 @@ var app = (function () {
     		block,
     		id: create_else_block$1.name,
     		type: "else",
-    		source: "(71:12) {:else}",
+    		source: "(73:6) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (69:12) {#if success}
+    // (71:6) {#if success}
     function create_if_block_1$1(ctx) {
     	let div;
     	let t0;
@@ -975,7 +975,7 @@ var app = (function () {
     			div = element("div");
     			t0 = text(/*tokenName*/ ctx[0]);
     			t1 = text(" will be sent to your address!");
-    			add_location(div, file$2, 69, 16, 2122);
+    			add_location(div, file$2, 71, 8, 1812);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -994,7 +994,7 @@ var app = (function () {
     		block,
     		id: create_if_block_1$1.name,
     		type: "if",
-    		source: "(69:12) {#if success}",
+    		source: "(71:6) {#if success}",
     		ctx
     	});
 
@@ -1071,33 +1071,33 @@ var app = (function () {
     			t15 = space();
     			div2 = element("div");
     			img = element("img");
-    			attr_dev(p0, "class", "welcome svelte-1u0at7g");
-    			add_location(p0, file$2, 61, 4, 1861);
-    			add_location(h1, file$2, 62, 4, 1899);
-    			attr_dev(p1, "class", "help svelte-1u0at7g");
-    			add_location(p1, file$2, 63, 4, 1931);
+    			attr_dev(p0, "class", "welcome svelte-1ueoti6");
+    			add_location(p0, file$2, 63, 2, 1581);
+    			add_location(h1, file$2, 64, 2, 1617);
+    			attr_dev(p1, "class", "help svelte-1ueoti6");
+    			add_location(p1, file$2, 65, 2, 1647);
     			attr_dev(label, "for", "address");
-    			attr_dev(label, "class", "svelte-1u0at7g");
-    			add_location(label, file$2, 86, 8, 2635);
+    			attr_dev(label, "class", "svelte-1ueoti6");
+    			add_location(label, file$2, 88, 4, 2235);
     			attr_dev(input, "type", "text");
     			input.disabled = /*waiting*/ ctx[3];
-    			attr_dev(input, "class", "svelte-1u0at7g");
-    			add_location(input, file$2, 87, 8, 2692);
-    			attr_dev(div0, "class", "iota-input svelte-1u0at7g");
-    			add_location(div0, file$2, 85, 4, 2602);
+    			attr_dev(input, "class", "svelte-1ueoti6");
+    			add_location(input, file$2, 89, 4, 2288);
+    			attr_dev(div0, "class", "iota-input svelte-1ueoti6");
+    			add_location(div0, file$2, 87, 2, 2206);
     			attr_dev(button, "type", "button");
     			button.disabled = button_disabled_value = /*waiting*/ ctx[3] || !/*valid*/ ctx[7];
-    			attr_dev(button, "class", "svelte-1u0at7g");
-    			add_location(button, file$2, 90, 8, 2797);
-    			attr_dev(div1, "class", "right svelte-1u0at7g");
-    			add_location(div1, file$2, 89, 4, 2769);
+    			attr_dev(button, "class", "svelte-1ueoti6");
+    			add_location(button, file$2, 92, 4, 2385);
+    			attr_dev(div1, "class", "right svelte-1ueoti6");
+    			add_location(div1, file$2, 91, 2, 2361);
     			if (!src_url_equal(img.src, img_src_value = "./illustration.svg")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "faucet");
-    			attr_dev(img, "class", "illustration svelte-1u0at7g");
-    			add_location(img, file$2, 99, 8, 3017);
-    			attr_dev(div2, "class", "illustration-container svelte-1u0at7g");
-    			add_location(div2, file$2, 98, 4, 2972);
-    			add_location(div3, file$2, 60, 0, 1851);
+    			attr_dev(img, "class", "illustration svelte-1ueoti6");
+    			add_location(img, file$2, 97, 4, 2542);
+    			attr_dev(div2, "class", "illustration-container svelte-1ueoti6");
+    			add_location(div2, file$2, 96, 2, 2501);
+    			add_location(div3, file$2, 62, 0, 1573);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1221,7 +1221,7 @@ var app = (function () {
 
     			res = await fetch(ENDPOINT, {
     				method: "POST",
-    				mode: 'cors',
+    				mode: "cors",
     				headers: {
     					"Access-Control-Allow-Origin": "*",
     					"Access-Control-Allow-Methods": "POST",
@@ -1366,10 +1366,10 @@ var app = (function () {
     			p.textContent = "Fetching network from node...";
     			t1 = space();
     			div0 = element("div");
-    			add_location(p, file$1, 1, 4, 10);
-    			attr_dev(div0, "class", "spinner svelte-1a149ik");
-    			add_location(div0, file$1, 2, 4, 51);
-    			attr_dev(div1, "class", "svelte-1a149ik");
+    			add_location(p, file$1, 1, 2, 8);
+    			attr_dev(div0, "class", "spinner svelte-1ftg3rg");
+    			add_location(div0, file$1, 2, 2, 47);
+    			attr_dev(div1, "class", "svelte-1ftg3rg");
     			add_location(div1, file$1, 0, 0, 0);
     		},
     		l: function claim(nodes) {
@@ -1431,7 +1431,7 @@ var app = (function () {
     const { Error: Error_1, console: console_1, document: document_1 } = globals;
     const file = "src/App.svelte";
 
-    // (86:4) {#if favicon}
+    // (90:2) {#if favicon}
     function create_if_block_3(ctx) {
     	let link;
 
@@ -1441,7 +1441,7 @@ var app = (function () {
     			attr_dev(link, "rel", "icon");
     			attr_dev(link, "type", "image/png");
     			attr_dev(link, "href", /*favicon*/ ctx[3]);
-    			add_location(link, file, 86, 8, 3251);
+    			add_location(link, file, 90, 4, 2912);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, link, anchor);
@@ -1460,14 +1460,14 @@ var app = (function () {
     		block,
     		id: create_if_block_3.name,
     		type: "if",
-    		source: "(86:4) {#if favicon}",
+    		source: "(90:2) {#if favicon}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (95:16) {#if logo}
+    // (99:8) {#if logo}
     function create_if_block_2(ctx) {
     	let img;
     	let img_src_value;
@@ -1476,9 +1476,9 @@ var app = (function () {
     		c: function create() {
     			img = element("img");
     			if (!src_url_equal(img.src, img_src_value = /*logo*/ ctx[4])) attr_dev(img, "src", img_src_value);
-    			attr_dev(img, "class", "logo svelte-14i30l2");
+    			attr_dev(img, "class", "logo svelte-1tgim9i");
     			attr_dev(img, "alt", /*tokenName*/ ctx[2]);
-    			add_location(img, file, 95, 20, 3470);
+    			add_location(img, file, 99, 10, 3099);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, img, anchor);
@@ -1501,14 +1501,14 @@ var app = (function () {
     		block,
     		id: create_if_block_2.name,
     		type: "if",
-    		source: "(95:16) {#if logo}",
+    		source: "(99:8) {#if logo}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (111:20) {:else}
+    // (115:10) {:else}
     function create_else_block(ctx) {
     	let div;
     	let loader;
@@ -1520,7 +1520,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			create_component(loader.$$.fragment);
-    			add_location(div, file, 111, 24, 4069);
+    			add_location(div, file, 115, 12, 3543);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -1555,14 +1555,14 @@ var app = (function () {
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(111:20) {:else}",
+    		source: "(115:10) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (107:53) 
+    // (111:43) 
     function create_if_block_1(ctx) {
     	let div;
     	let faucet;
@@ -1581,7 +1581,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			create_component(faucet.$$.fragment);
-    			add_location(div, file, 107, 24, 3909);
+    			add_location(div, file, 111, 12, 3431);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -1621,14 +1621,14 @@ var app = (function () {
     		block,
     		id: create_if_block_1.name,
     		type: "if",
-    		source: "(107:53) ",
+    		source: "(111:43) ",
     		ctx
     	});
 
     	return block;
     }
 
-    // (103:20) {#if errorMessage }
+    // (107:10) {#if errorMessage}
     function create_if_block(ctx) {
     	let div;
     	let error;
@@ -1644,7 +1644,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			create_component(error.$$.fragment);
-    			add_location(div, file, 103, 24, 3733);
+    			add_location(div, file, 107, 12, 3303);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -1683,7 +1683,7 @@ var app = (function () {
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(103:20) {#if errorMessage }",
+    		source: "(107:10) {#if errorMessage}",
     		ctx
     	});
 
@@ -1705,7 +1705,7 @@ var app = (function () {
     	let current_block_type_index;
     	let if_block2;
     	let current;
-    	document_1.title = title_value = "" + ((/*tokenName*/ ctx[2] ? `${/*tokenName*/ ctx[2]} ` : '') + "Faucet");
+    	document_1.title = title_value = "" + ((/*tokenName*/ ctx[2] ? `${/*tokenName*/ ctx[2]} ` : "") + "Faucet");
     	let if_block0 = /*favicon*/ ctx[3] && create_if_block_3(ctx);
     	let if_block1 = /*logo*/ ctx[4] && create_if_block_2(ctx);
     	const if_block_creators = [create_if_block, create_if_block_1, create_else_block];
@@ -1736,18 +1736,18 @@ var app = (function () {
     			main = element("main");
     			if_block2.c();
     			attr_dev(div0, "class", "col-xs-12");
-    			add_location(div0, file, 93, 12, 3399);
+    			add_location(div0, file, 97, 6, 3046);
     			attr_dev(div1, "class", "row");
-    			add_location(div1, file, 92, 8, 3369);
-    			attr_dev(main, "class", "svelte-14i30l2");
-    			add_location(main, file, 101, 16, 3662);
+    			add_location(div1, file, 96, 4, 3022);
+    			attr_dev(main, "class", "svelte-1tgim9i");
+    			add_location(main, file, 105, 8, 3255);
     			attr_dev(div2, "class", "col-lg-4");
-    			add_location(div2, file, 100, 12, 3623);
+    			add_location(div2, file, 104, 6, 3224);
     			attr_dev(div3, "class", "row contentrow");
-    			add_location(div3, file, 99, 8, 3582);
+    			add_location(div3, file, 103, 4, 3189);
     			attr_dev(div4, "class", "content");
-    			add_location(div4, file, 91, 4, 3339);
-    			add_location(div5, file, 90, 0, 3329);
+    			add_location(div4, file, 95, 2, 2996);
+    			add_location(div5, file, 94, 0, 2988);
     		},
     		l: function claim(nodes) {
     			throw new Error_1("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1769,7 +1769,7 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, [dirty]) {
-    			if ((!current || dirty & /*tokenName*/ 4) && title_value !== (title_value = "" + ((/*tokenName*/ ctx[2] ? `${/*tokenName*/ ctx[2]} ` : '') + "Faucet"))) {
+    			if ((!current || dirty & /*tokenName*/ 4) && title_value !== (title_value = "" + ((/*tokenName*/ ctx[2] ? `${/*tokenName*/ ctx[2]} ` : "") + "Faucet"))) {
     				document_1.title = title_value;
     			}
 
@@ -1871,14 +1871,14 @@ var app = (function () {
     		{
     			tokenName: IOTA_TOKEN_NAME,
     			bech32HRP: IOTA_BENCH32HRP,
-    			logo: 'iota.svg',
-    			favicon: 'iota-fav.ico'
+    			logo: "iota.svg",
+    			favicon: "iota-fav.ico"
     		},
     		{
     			tokenName: SHIMMER_TOKEN_NAME,
     			bech32HRP: SHIMMER_BENCH32HRP,
-    			logo: 'shimmer.svg',
-    			favicon: 'shimmer-fav.ico'
+    			logo: "shimmer.svg",
+    			favicon: "shimmer-fav.ico"
     		}
     	];
 
@@ -1929,8 +1929,8 @@ var app = (function () {
     				$$invalidate(0, bech32HRP = data.bech32HRP ? data.bech32HRP : SHIMMER_BENCH32HRP);
     				document.body.classList.add("shimmer");
     			} else {
-    				$$invalidate(2, tokenName = data.tokenName ? data.tokenName : 'Foo Bar');
-    				$$invalidate(0, bech32HRP = data.bech32HRP ? data.bech32HRP : 'foo1');
+    				$$invalidate(2, tokenName = data.tokenName ? data.tokenName : "Foo Bar");
+    				$$invalidate(0, bech32HRP = data.bech32HRP ? data.bech32HRP : "foo1");
     			}
     		} else {
     			$$invalidate(1, errorMessage = "Something went wrong fetching the network info. Please, try again later.");

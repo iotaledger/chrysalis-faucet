@@ -4,6 +4,7 @@ var app = (function () {
     'use strict';
 
     function noop() { }
+    const identity = x => x;
     function add_location(element, file, line, column, char) {
         element.__svelte_meta = {
             loc: { file, line, column, char }
@@ -35,8 +36,60 @@ var app = (function () {
     function is_empty(obj) {
         return Object.keys(obj).length === 0;
     }
+
+    const is_client = typeof window !== 'undefined';
+    let now = is_client
+        ? () => window.performance.now()
+        : () => Date.now();
+    let raf = is_client ? cb => requestAnimationFrame(cb) : noop;
+
+    const tasks = new Set();
+    function run_tasks(now) {
+        tasks.forEach(task => {
+            if (!task.c(now)) {
+                tasks.delete(task);
+                task.f();
+            }
+        });
+        if (tasks.size !== 0)
+            raf(run_tasks);
+    }
+    /**
+     * Creates a new task that runs on each raf frame
+     * until it returns a falsy value or is aborted
+     */
+    function loop(callback) {
+        let task;
+        if (tasks.size === 0)
+            raf(run_tasks);
+        return {
+            promise: new Promise(fulfill => {
+                tasks.add(task = { c: callback, f: fulfill });
+            }),
+            abort() {
+                tasks.delete(task);
+            }
+        };
+    }
     function append(target, node) {
         target.appendChild(node);
+    }
+    function get_root_for_style(node) {
+        if (!node)
+            return document;
+        const root = node.getRootNode ? node.getRootNode() : node.ownerDocument;
+        if (root.host) {
+            return root;
+        }
+        return document;
+    }
+    function append_empty_stylesheet(node) {
+        const style_element = element('style');
+        append_stylesheet(get_root_for_style(node), style_element);
+        return style_element;
+    }
+    function append_stylesheet(node, style) {
+        append(node.head || node, style);
     }
     function insert(target, node, anchor) {
         target.insertBefore(node, anchor || null);
@@ -76,6 +129,67 @@ var app = (function () {
         const e = document.createEvent('CustomEvent');
         e.initCustomEvent(type, bubbles, false, detail);
         return e;
+    }
+
+    const active_docs = new Set();
+    let active = 0;
+    // https://github.com/darkskyapp/string-hash/blob/master/index.js
+    function hash(str) {
+        let hash = 5381;
+        let i = str.length;
+        while (i--)
+            hash = ((hash << 5) - hash) ^ str.charCodeAt(i);
+        return hash >>> 0;
+    }
+    function create_rule(node, a, b, duration, delay, ease, fn, uid = 0) {
+        const step = 16.666 / duration;
+        let keyframes = '{\n';
+        for (let p = 0; p <= 1; p += step) {
+            const t = a + (b - a) * ease(p);
+            keyframes += p * 100 + `%{${fn(t, 1 - t)}}\n`;
+        }
+        const rule = keyframes + `100% {${fn(b, 1 - b)}}\n}`;
+        const name = `__svelte_${hash(rule)}_${uid}`;
+        const doc = get_root_for_style(node);
+        active_docs.add(doc);
+        const stylesheet = doc.__svelte_stylesheet || (doc.__svelte_stylesheet = append_empty_stylesheet(node).sheet);
+        const current_rules = doc.__svelte_rules || (doc.__svelte_rules = {});
+        if (!current_rules[name]) {
+            current_rules[name] = true;
+            stylesheet.insertRule(`@keyframes ${name} ${rule}`, stylesheet.cssRules.length);
+        }
+        const animation = node.style.animation || '';
+        node.style.animation = `${animation ? `${animation}, ` : ''}${name} ${duration}ms linear ${delay}ms 1 both`;
+        active += 1;
+        return name;
+    }
+    function delete_rule(node, name) {
+        const previous = (node.style.animation || '').split(', ');
+        const next = previous.filter(name
+            ? anim => anim.indexOf(name) < 0 // remove specific animation
+            : anim => anim.indexOf('__svelte') === -1 // remove all Svelte animations
+        );
+        const deleted = previous.length - next.length;
+        if (deleted) {
+            node.style.animation = next.join(', ');
+            active -= deleted;
+            if (!active)
+                clear_rules();
+        }
+    }
+    function clear_rules() {
+        raf(() => {
+            if (active)
+                return;
+            active_docs.forEach(doc => {
+                const stylesheet = doc.__svelte_stylesheet;
+                let i = stylesheet.cssRules.length;
+                while (i--)
+                    stylesheet.deleteRule(i);
+                doc.__svelte_rules = {};
+            });
+            active_docs.clear();
+        });
     }
 
     let current_component;
@@ -154,6 +268,20 @@ var app = (function () {
             $$.after_update.forEach(add_render_callback);
         }
     }
+
+    let promise;
+    function wait() {
+        if (!promise) {
+            promise = Promise.resolve();
+            promise.then(() => {
+                promise = null;
+            });
+        }
+        return promise;
+    }
+    function dispatch(node, direction, kind) {
+        node.dispatchEvent(custom_event(`${direction ? 'intro' : 'outro'}${kind}`));
+    }
     const outroing = new Set();
     let outros;
     function group_outros() {
@@ -190,6 +318,70 @@ var app = (function () {
             });
             block.o(local);
         }
+    }
+    const null_transition = { duration: 0 };
+    function create_in_transition(node, fn, params) {
+        let config = fn(node, params);
+        let running = false;
+        let animation_name;
+        let task;
+        let uid = 0;
+        function cleanup() {
+            if (animation_name)
+                delete_rule(node, animation_name);
+        }
+        function go() {
+            const { delay = 0, duration = 300, easing = identity, tick = noop, css } = config || null_transition;
+            if (css)
+                animation_name = create_rule(node, 0, 1, duration, delay, easing, css, uid++);
+            tick(0, 1);
+            const start_time = now() + delay;
+            const end_time = start_time + duration;
+            if (task)
+                task.abort();
+            running = true;
+            add_render_callback(() => dispatch(node, true, 'start'));
+            task = loop(now => {
+                if (running) {
+                    if (now >= end_time) {
+                        tick(1, 0);
+                        dispatch(node, true, 'end');
+                        cleanup();
+                        return running = false;
+                    }
+                    if (now >= start_time) {
+                        const t = easing((now - start_time) / duration);
+                        tick(t, 1 - t);
+                    }
+                }
+                return running;
+            });
+        }
+        let started = false;
+        return {
+            start() {
+                if (started)
+                    return;
+                started = true;
+                delete_rule(node);
+                if (is_function(config)) {
+                    config = config();
+                    wait().then(go);
+                }
+                else {
+                    go();
+                }
+            },
+            invalidate() {
+                started = false;
+            },
+            end() {
+                if (running) {
+                    cleanup();
+                    running = false;
+                }
+            }
+        };
     }
 
     const globals = (typeof window !== 'undefined'
@@ -399,17 +591,26 @@ var app = (function () {
         $inject_state() { }
     }
 
-    /* src/components/Page.svelte generated by Svelte v3.42.3 */
+    function fade(node, { delay = 0, duration = 400, easing = identity } = {}) {
+        const o = +getComputedStyle(node).opacity;
+        return {
+            delay,
+            duration,
+            easing,
+            css: t => `opacity: ${t * o}`
+        };
+    }
 
+    /* src/components/Page.svelte generated by Svelte v3.42.3 */
     const file$3 = "src/components/Page.svelte";
 
-    // (83:4) {:else}
+    // (73:4) {:else}
     function create_else_block_1(ctx) {
     	let div;
 
     	function select_block_type_2(ctx, dirty) {
-    		if (/*waiting*/ ctx[0]) return create_if_block_2;
-    		if (/*valid*/ ctx[1]) return create_if_block_3;
+    		if (/*waiting*/ ctx[1]) return create_if_block_2;
+    		if (/*valid*/ ctx[5]) return create_if_block_3;
     		return create_else_block_2;
     	}
 
@@ -420,8 +621,8 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			if_block.c();
-    			attr_dev(div, "class", "warning svelte-1fszyfy");
-    			add_location(div, file$3, 83, 8, 2125);
+    			attr_dev(div, "class", "warning svelte-p3yeqs");
+    			add_location(div, file$3, 73, 8, 2256);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -450,19 +651,19 @@ var app = (function () {
     		block,
     		id: create_else_block_1.name,
     		type: "else",
-    		source: "(83:4) {:else}",
+    		source: "(73:4) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (75:4) {#if done}
+    // (65:4) {#if done}
     function create_if_block$1(ctx) {
     	let div;
 
     	function select_block_type_1(ctx, dirty) {
-    		if (/*success*/ ctx[4]) return create_if_block_1$1;
+    		if (/*success*/ ctx[3]) return create_if_block_1$1;
     		return create_else_block$1;
     	}
 
@@ -473,8 +674,8 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			if_block.c();
-    			attr_dev(div, "class", "warning svelte-1fszyfy");
-    			add_location(div, file$3, 75, 8, 1901);
+    			attr_dev(div, "class", "warning svelte-p3yeqs");
+    			add_location(div, file$3, 65, 8, 2028);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -503,14 +704,14 @@ var app = (function () {
     		block,
     		id: create_if_block$1.name,
     		type: "if",
-    		source: "(75:4) {#if done}",
+    		source: "(65:4) {#if done}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (89:12) {:else}
+    // (79:12) {:else}
     function create_else_block_2(ctx) {
     	let t0;
     	let t1;
@@ -550,14 +751,14 @@ var app = (function () {
     		block,
     		id: create_else_block_2.name,
     		type: "else",
-    		source: "(89:12) {:else}",
+    		source: "(79:12) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (87:28) 
+    // (77:28) 
     function create_if_block_3(ctx) {
     	let t;
 
@@ -578,14 +779,14 @@ var app = (function () {
     		block,
     		id: create_if_block_3.name,
     		type: "if",
-    		source: "(87:28) ",
+    		source: "(77:28) ",
     		ctx
     	});
 
     	return block;
     }
 
-    // (85:12) {#if waiting}
+    // (75:12) {#if waiting}
     function create_if_block_2(ctx) {
     	let t;
 
@@ -606,14 +807,14 @@ var app = (function () {
     		block,
     		id: create_if_block_2.name,
     		type: "if",
-    		source: "(85:12) {#if waiting}",
+    		source: "(75:12) {#if waiting}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (79:12) {:else}
+    // (69:12) {:else}
     function create_else_block$1(ctx) {
     	let div;
     	let t;
@@ -621,15 +822,15 @@ var app = (function () {
     	const block = {
     		c: function create() {
     			div = element("div");
-    			t = text(/*errormsg*/ ctx[5]);
-    			add_location(div, file$3, 79, 16, 2050);
+    			t = text(/*errorMessage*/ ctx[4]);
+    			add_location(div, file$3, 69, 16, 2177);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
     			append_dev(div, t);
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*errormsg*/ 32) set_data_dev(t, /*errormsg*/ ctx[5]);
+    			if (dirty & /*errorMessage*/ 16) set_data_dev(t, /*errorMessage*/ ctx[4]);
     		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(div);
@@ -640,14 +841,14 @@ var app = (function () {
     		block,
     		id: create_else_block$1.name,
     		type: "else",
-    		source: "(79:12) {:else}",
+    		source: "(69:12) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (77:12) {#if success}
+    // (67:12) {#if success}
     function create_if_block_1$1(ctx) {
     	let div;
     	let t0;
@@ -658,7 +859,7 @@ var app = (function () {
     			div = element("div");
     			t0 = text(/*token*/ ctx[7]);
     			t1 = text(" will be sent to your address!");
-    			add_location(div, file$3, 77, 16, 1965);
+    			add_location(div, file$3, 67, 16, 2092);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -677,7 +878,7 @@ var app = (function () {
     		block,
     		id: create_if_block_1$1.name,
     		type: "if",
-    		source: "(77:12) {#if success}",
+    		source: "(67:12) {#if success}",
     		ctx
     	});
 
@@ -711,6 +912,7 @@ var app = (function () {
     	let div2;
     	let img;
     	let img_src_value;
+    	let main_intro;
     	let mounted;
     	let dispose;
 
@@ -752,34 +954,34 @@ var app = (function () {
     			t15 = space();
     			div2 = element("div");
     			img = element("img");
-    			attr_dev(p0, "class", "welcome svelte-1fszyfy");
-    			add_location(p0, file$3, 69, 4, 1712);
-    			attr_dev(h1, "class", "svelte-1fszyfy");
-    			add_location(h1, file$3, 70, 4, 1750);
-    			attr_dev(p1, "class", "help svelte-1fszyfy");
-    			add_location(p1, file$3, 71, 4, 1778);
+    			attr_dev(p0, "class", "welcome svelte-p3yeqs");
+    			add_location(p0, file$3, 59, 4, 1839);
+    			attr_dev(h1, "class", "svelte-p3yeqs");
+    			add_location(h1, file$3, 60, 4, 1877);
+    			attr_dev(p1, "class", "help svelte-p3yeqs");
+    			add_location(p1, file$3, 61, 4, 1905);
     			attr_dev(label, "for", "address");
-    			attr_dev(label, "class", "svelte-1fszyfy");
-    			add_location(label, file$3, 94, 8, 2458);
+    			attr_dev(label, "class", "svelte-p3yeqs");
+    			add_location(label, file$3, 84, 8, 2589);
     			attr_dev(input, "type", "text");
-    			input.disabled = /*waiting*/ ctx[0];
-    			attr_dev(input, "class", "svelte-1fszyfy");
-    			add_location(input, file$3, 95, 8, 2511);
-    			attr_dev(div0, "class", "iota-input svelte-1fszyfy");
-    			add_location(div0, file$3, 93, 4, 2425);
+    			input.disabled = /*waiting*/ ctx[1];
+    			attr_dev(input, "class", "svelte-p3yeqs");
+    			add_location(input, file$3, 85, 8, 2642);
+    			attr_dev(div0, "class", "iota-input svelte-p3yeqs");
+    			add_location(div0, file$3, 83, 4, 2556);
     			attr_dev(button, "type", "button");
-    			toggle_class(button, "disabled", /*waiting*/ ctx[0] || !/*valid*/ ctx[1]);
-    			add_location(button, file$3, 103, 8, 2692);
-    			attr_dev(div1, "class", "right svelte-1fszyfy");
-    			add_location(div1, file$3, 102, 4, 2664);
+    			toggle_class(button, "disabled", /*waiting*/ ctx[1] || !/*valid*/ ctx[5]);
+    			add_location(button, file$3, 88, 8, 2747);
+    			attr_dev(div1, "class", "right svelte-p3yeqs");
+    			add_location(div1, file$3, 87, 4, 2719);
     			if (!src_url_equal(img.src, img_src_value = "./illustration.svg")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "faucet");
     			attr_dev(img, "class", "illustration");
-    			add_location(img, file$3, 112, 8, 2918);
+    			add_location(img, file$3, 97, 8, 2973);
     			attr_dev(div2, "class", "illustration-container");
-    			add_location(div2, file$3, 111, 4, 2873);
-    			attr_dev(main, "class", "svelte-1fszyfy");
-    			add_location(main, file$3, 68, 0, 1701);
+    			add_location(div2, file$3, 96, 4, 2928);
+    			attr_dev(main, "class", "svelte-p3yeqs");
+    			add_location(main, file$3, 58, 0, 1820);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -805,7 +1007,7 @@ var app = (function () {
     			append_dev(label, t11);
     			append_dev(div0, t12);
     			append_dev(div0, input);
-    			set_input_value(input, /*address*/ ctx[3]);
+    			set_input_value(input, /*address*/ ctx[0]);
     			append_dev(main, t13);
     			append_dev(main, div1);
     			append_dev(div1, button);
@@ -815,9 +1017,8 @@ var app = (function () {
 
     			if (!mounted) {
     				dispose = [
-    					listen_dev(input, "input", /*input_input_handler*/ ctx[11]),
-    					listen_dev(input, "keyup", /*validate*/ ctx[8], false, false, false),
-    					listen_dev(button, "click", /*requestTokens*/ ctx[9], false, false, false)
+    					listen_dev(input, "input", /*input_input_handler*/ ctx[10]),
+    					listen_dev(button, "click", /*requestTokens*/ ctx[8], false, false, false)
     				];
 
     				mounted = true;
@@ -841,19 +1042,26 @@ var app = (function () {
 
     			if (dirty & /*token*/ 128) set_data_dev(t10, /*token*/ ctx[7]);
 
-    			if (dirty & /*waiting*/ 1) {
-    				prop_dev(input, "disabled", /*waiting*/ ctx[0]);
+    			if (dirty & /*waiting*/ 2) {
+    				prop_dev(input, "disabled", /*waiting*/ ctx[1]);
     			}
 
-    			if (dirty & /*address*/ 8 && input.value !== /*address*/ ctx[3]) {
-    				set_input_value(input, /*address*/ ctx[3]);
+    			if (dirty & /*address*/ 1 && input.value !== /*address*/ ctx[0]) {
+    				set_input_value(input, /*address*/ ctx[0]);
     			}
 
-    			if (dirty & /*waiting, valid*/ 3) {
-    				toggle_class(button, "disabled", /*waiting*/ ctx[0] || !/*valid*/ ctx[1]);
+    			if (dirty & /*waiting, valid*/ 34) {
+    				toggle_class(button, "disabled", /*waiting*/ ctx[1] || !/*valid*/ ctx[5]);
     			}
     		},
-    		i: noop,
+    		i: function intro(local) {
+    			if (!main_intro) {
+    				add_render_callback(() => {
+    					main_intro = create_in_transition(main, fade, {});
+    					main_intro.start();
+    				});
+    			}
+    		},
     		o: noop,
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(main);
@@ -877,72 +1085,61 @@ var app = (function () {
     function instance$3($$self, $$props, $$invalidate) {
     	let token;
     	let hint;
+    	let valid;
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Page', slots, []);
-    	let { networkParams } = $$props;
+    	let { networkParams = {} } = $$props;
     	let waiting = false;
-    	let valid = false;
     	let done = false;
-    	let timeout = false;
-    	let address = "";
+    	let address = null;
     	let success = false;
     	let data = null;
-    	let errormsg = null;
-
-    	function validate() {
-    		$$invalidate(2, done = false);
-
-    		if (address.length >= 0) {
-    			$$invalidate(1, valid = true);
-    		} else {
-    			$$invalidate(1, valid = false);
-    			return false;
-    		}
-    	}
+    	let errorMessage = null;
 
     	async function requestTokens() {
-    		if (!validate()) return;
-
     		if (waiting) {
     			return false;
     		}
 
-    		$$invalidate(0, waiting = true);
+    		$$invalidate(1, waiting = true);
     		let res = null;
     		data = null;
-    		$$invalidate(5, errormsg = "Sending request...");
+    		$$invalidate(4, errorMessage = "Sending request...");
 
     		try {
-    			res = await fetch(`/api/enqueue`, {
+    			res = await fetch("https://faucet.chrysalis-devnet.iota.cafe/api/plugins/faucet/enqueue", {
     				method: "POST",
+    				mode: 'cors',
     				headers: {
+    					"Access-Control-Allow-Origin": "*",
+    					"Access-Control-Allow-Methods": "POST",
     					Accept: "application/json",
+    					"Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
     					"Content-Type": "application/json"
     				},
     				body: JSON.stringify({ address })
     			});
 
     			if (res.status === 202) {
-    				data = await res.json();
-    				$$invalidate(5, errormsg = "OK");
+    				$$invalidate(4, errorMessage = "OK");
     			} else if (res.status === 429) {
-    				$$invalidate(5, errormsg = "Too many requests. Try again later!");
+    				$$invalidate(4, errorMessage = "Too many requests. Try again later!");
     			} else {
     				data = await res.json();
-    				$$invalidate(5, errormsg = data.error.message);
+    				$$invalidate(4, errorMessage = data.error.message);
     			}
     		} catch(error) {
     			if (error.name === "AbortError") {
     				timeout = true;
     			}
 
-    			$$invalidate(5, errormsg = error);
+    			$$invalidate(4, errorMessage = error);
     		}
 
-    		$$invalidate(4, success = res && res.status === 202);
+    		$$invalidate(3, success = res && res.status === 202);
     		$$invalidate(2, done = true);
-    		$$invalidate(0, waiting = false);
-    		$$invalidate(3, address = "");
+    		$$invalidate(1, waiting = false);
+    		$$invalidate(0, address = "");
     	}
 
     	const writable_props = ['networkParams'];
@@ -953,39 +1150,37 @@ var app = (function () {
 
     	function input_input_handler() {
     		address = this.value;
-    		$$invalidate(3, address);
+    		$$invalidate(0, address);
     	}
 
     	$$self.$$set = $$props => {
-    		if ('networkParams' in $$props) $$invalidate(10, networkParams = $$props.networkParams);
+    		if ('networkParams' in $$props) $$invalidate(9, networkParams = $$props.networkParams);
     	};
 
     	$$self.$capture_state = () => ({
     		networkParams,
+    		fade,
     		waiting,
-    		valid,
     		done,
-    		timeout,
     		address,
     		success,
     		data,
-    		errormsg,
-    		validate,
+    		errorMessage,
     		requestTokens,
+    		valid,
     		hint,
     		token
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ('networkParams' in $$props) $$invalidate(10, networkParams = $$props.networkParams);
-    		if ('waiting' in $$props) $$invalidate(0, waiting = $$props.waiting);
-    		if ('valid' in $$props) $$invalidate(1, valid = $$props.valid);
+    		if ('networkParams' in $$props) $$invalidate(9, networkParams = $$props.networkParams);
+    		if ('waiting' in $$props) $$invalidate(1, waiting = $$props.waiting);
     		if ('done' in $$props) $$invalidate(2, done = $$props.done);
-    		if ('timeout' in $$props) timeout = $$props.timeout;
-    		if ('address' in $$props) $$invalidate(3, address = $$props.address);
-    		if ('success' in $$props) $$invalidate(4, success = $$props.success);
+    		if ('address' in $$props) $$invalidate(0, address = $$props.address);
+    		if ('success' in $$props) $$invalidate(3, success = $$props.success);
     		if ('data' in $$props) data = $$props.data;
-    		if ('errormsg' in $$props) $$invalidate(5, errormsg = $$props.errormsg);
+    		if ('errorMessage' in $$props) $$invalidate(4, errorMessage = $$props.errorMessage);
+    		if ('valid' in $$props) $$invalidate(5, valid = $$props.valid);
     		if ('hint' in $$props) $$invalidate(6, hint = $$props.hint);
     		if ('token' in $$props) $$invalidate(7, token = $$props.token);
     	};
@@ -995,21 +1190,24 @@ var app = (function () {
     	}
 
     	$$self.$$.update = () => {
-    		if ($$self.$$.dirty & /*networkParams*/ 1024) {
-    			$$invalidate(7, { token, hint } = networkParams, token, ($$invalidate(6, hint), $$invalidate(10, networkParams)));
+    		if ($$self.$$.dirty & /*networkParams*/ 512) {
+    			$$invalidate(7, { token, hint } = networkParams, token, ($$invalidate(6, hint), $$invalidate(9, networkParams)));
+    		}
+
+    		if ($$self.$$.dirty & /*address*/ 1) {
+    			$$invalidate(5, valid = address && address.length > 0);
     		}
     	};
 
     	return [
-    		waiting,
-    		valid,
-    		done,
     		address,
+    		waiting,
+    		done,
     		success,
-    		errormsg,
+    		errorMessage,
+    		valid,
     		hint,
     		token,
-    		validate,
     		requestTokens,
     		networkParams,
     		input_input_handler
@@ -1019,7 +1217,7 @@ var app = (function () {
     class Page extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$3, create_fragment$3, safe_not_equal, { networkParams: 10 });
+    		init(this, options, instance$3, create_fragment$3, safe_not_equal, { networkParams: 9 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
@@ -1027,13 +1225,6 @@ var app = (function () {
     			options,
     			id: create_fragment$3.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*networkParams*/ ctx[10] === undefined && !('networkParams' in props)) {
-    			console.warn("<Page> was created without expected prop 'networkParams'");
-    		}
     	}
 
     	get networkParams() {
@@ -1059,14 +1250,14 @@ var app = (function () {
     		c: function create() {
     			main = element("main");
     			h1 = element("h1");
-    			h1.textContent = "Waiting";
+    			h1.textContent = "Fetching network from node...";
     			t1 = space();
     			div = element("div");
-    			add_location(h1, file$2, 4, 4, 31);
+    			add_location(h1, file$2, 1, 4, 11);
     			attr_dev(div, "class", "spinner svelte-1sqenb0");
-    			add_location(div, file$2, 5, 4, 52);
+    			add_location(div, file$2, 2, 4, 54);
     			attr_dev(main, "class", "svelte-1sqenb0");
-    			add_location(main, file$2, 3, 0, 20);
+    			add_location(main, file$2, 0, 0, 0);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1124,7 +1315,6 @@ var app = (function () {
 
     /* src/components/ErrorPage.svelte generated by Svelte v3.42.3 */
 
-    const { console: console_1 } = globals;
     const file$1 = "src/components/ErrorPage.svelte";
 
     function create_fragment$1(ctx) {
@@ -1146,12 +1336,12 @@ var app = (function () {
     			t2 = space();
     			button = element("button");
     			button.textContent = "Try again";
-    			add_location(p, file$1, 8, 8, 132);
-    			add_location(h1, file$1, 6, 4, 91);
+    			add_location(p, file$1, 7, 8, 101);
+    			add_location(h1, file$1, 5, 4, 60);
     			attr_dev(button, "onclick", "window.location.reload();");
-    			add_location(button, file$1, 13, 4, 191);
+    			add_location(button, file$1, 12, 4, 160);
     			attr_dev(main, "class", "svelte-fcn7gt");
-    			add_location(main, file$1, 5, 0, 80);
+    			add_location(main, file$1, 4, 0, 49);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1190,11 +1380,10 @@ var app = (function () {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('ErrorPage', slots, []);
     	let { errorMessage } = $$props;
-    	console.log(errorMessage);
     	const writable_props = ['errorMessage'];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1.warn(`<ErrorPage> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<ErrorPage> was created with unknown prop '${key}'`);
     	});
 
     	$$self.$$set = $$props => {
@@ -1230,7 +1419,7 @@ var app = (function () {
     		const props = options.props || {};
 
     		if (/*errorMessage*/ ctx[0] === undefined && !('errorMessage' in props)) {
-    			console_1.warn("<ErrorPage> was created without expected prop 'errorMessage'");
+    			console.warn("<ErrorPage> was created without expected prop 'errorMessage'");
     		}
     	}
 
@@ -1252,7 +1441,7 @@ var app = (function () {
     const { document: document_1 } = globals;
     const file = "src/App.svelte";
 
-    // (115:16) {:else}
+    // (117:16) {:else}
     function create_else_block(ctx) {
     	let loader;
     	let current;
@@ -1285,21 +1474,21 @@ var app = (function () {
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(115:16) {:else}",
+    		source: "(117:16) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (113:34) 
+    // (115:34) 
     function create_if_block_1(ctx) {
     	let page;
     	let current;
 
     	page = new Page({
     			props: {
-    				networkParams: /*networkParams*/ ctx[3][/*network*/ ctx[1]]
+    				networkParams: /*NETWORK_PARAMS*/ ctx[3][/*network*/ ctx[1]]
     			},
     			$$inline: true
     		});
@@ -1314,7 +1503,7 @@ var app = (function () {
     		},
     		p: function update(ctx, dirty) {
     			const page_changes = {};
-    			if (dirty & /*network*/ 2) page_changes.networkParams = /*networkParams*/ ctx[3][/*network*/ ctx[1]];
+    			if (dirty & /*network*/ 2) page_changes.networkParams = /*NETWORK_PARAMS*/ ctx[3][/*network*/ ctx[1]];
     			page.$set(page_changes);
     		},
     		i: function intro(local) {
@@ -1335,14 +1524,14 @@ var app = (function () {
     		block,
     		id: create_if_block_1.name,
     		type: "if",
-    		source: "(113:34) ",
+    		source: "(115:34) ",
     		ctx
     	});
 
     	return block;
     }
 
-    // (111:16) {#if errorMessage}
+    // (113:16) {#if errorMessage }
     function create_if_block(ctx) {
     	let errorpage;
     	let current;
@@ -1383,7 +1572,7 @@ var app = (function () {
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(111:16) {#if errorMessage}",
+    		source: "(113:16) {#if errorMessage }",
     		ctx
     	});
 
@@ -1435,27 +1624,27 @@ var app = (function () {
     			attr_dev(link, "rel", "icon");
     			attr_dev(link, "type", "image/png");
     			attr_dev(link, "href", /*networkIco*/ ctx[2]);
-    			add_location(link, file, 90, 4, 2578);
+    			add_location(link, file, 91, 4, 2777);
 
-    			if (!src_url_equal(img.src, img_src_value = `./${/*network*/ ctx[1] == "iota" || /*network*/ ctx[1] == "shimmer"
+    			if (!src_url_equal(img.src, img_src_value = `./${/*network*/ ctx[1] === "iota" || /*network*/ ctx[1] === "shimmer"
 			? /*network*/ ctx[1]
 			: "iota"}.svg`)) attr_dev(img, "src", img_src_value);
 
     			attr_dev(img, "class", "logo");
     			attr_dev(img, "alt", "IOTA");
-    			add_location(img, file, 96, 16, 2759);
+    			add_location(img, file, 98, 16, 2959);
     			attr_dev(div0, "class", "col-xs-12");
-    			add_location(div0, file, 95, 12, 2719);
+    			add_location(div0, file, 97, 12, 2919);
     			attr_dev(div1, "class", "row");
-    			add_location(div1, file, 94, 8, 2689);
+    			add_location(div1, file, 96, 8, 2889);
     			attr_dev(div2, "class", "col-lg-4");
-    			add_location(div2, file, 109, 12, 3131);
+    			add_location(div2, file, 111, 12, 3333);
     			attr_dev(div3, "class", "row contentrow");
-    			add_location(div3, file, 108, 8, 3090);
+    			add_location(div3, file, 110, 8, 3292);
     			attr_dev(div4, "class", "content");
-    			add_location(div4, file, 93, 4, 2659);
+    			add_location(div4, file, 95, 4, 2859);
     			attr_dev(main, "class", "svelte-1u7rf52");
-    			add_location(main, file, 92, 0, 2648);
+    			add_location(main, file, 94, 0, 2848);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1483,7 +1672,7 @@ var app = (function () {
     				attr_dev(link, "href", /*networkIco*/ ctx[2]);
     			}
 
-    			if (!current || dirty & /*network*/ 2 && !src_url_equal(img.src, img_src_value = `./${/*network*/ ctx[1] == "iota" || /*network*/ ctx[1] == "shimmer"
+    			if (!current || dirty & /*network*/ 2 && !src_url_equal(img.src, img_src_value = `./${/*network*/ ctx[1] === "iota" || /*network*/ ctx[1] === "shimmer"
 			? /*network*/ ctx[1]
 			: "iota"}.svg`)) {
     				attr_dev(img, "src", img_src_value);
@@ -1550,6 +1739,16 @@ var app = (function () {
     	let network = null;
     	let networkIco = "iota-fav.ico";
 
+    	const NETWORK_PARAMS = {
+    		shimmer: { token: "Shimmer", hint: "rms1..." },
+    		iota: { token: "IOTA", hint: "atoi1..." },
+    		whitelabel: { token: "Whitelabel", hint: "wlab1..." }
+    	};
+
+    	onMount(() => {
+    		void getNetwork();
+    	});
+
     	const setNetwork = token => {
     		if (token === "shimmer" || token === "iota") {
     			$$invalidate(1, network = token);
@@ -1558,13 +1757,13 @@ var app = (function () {
     			$$invalidate(1, network = "whitelabel");
     		}
 
-    		setTheme(token);
+    		setTheme();
     	};
 
-    	const setTheme = token => {
-    		if (token === "shimmer") {
+    	const setTheme = () => {
+    		if (network === "shimmer") {
     			document.body.classList.add("shimmer");
-    		} else if (token === "iota") {
+    		} else if (network === "iota") {
     			document.body.classList.remove("shimmer");
     		} else {
     			document.body.classList.remove("shimmer");
@@ -1575,49 +1774,37 @@ var app = (function () {
     		if (data.tokenName) {
     			return data.tokenName.toLowerCase();
     		} else {
-    			if (data.address.indexOf("rms1") === 0) return "shimmer";
-    			if (data.address.indexOf("atoi1") === 0) return "iota";
+    			if (data.address) {
+    				if (data.address.indexOf("rms1") === 0) return "shimmer";
+    				if (data.address.indexOf("atoi1") === 0) return "iota";
+    			}
     		}
 
     		return "whitelabel";
     	};
 
     	const getNetwork = async () => {
-    		// setTimeout(() => {
-    		//     return setNetwork("shimmer");
-    		// }, 2000);
-    		const endpoint = "https://faucet.alphanet.iotaledger.net/api/plugins/faucet/v1/info";
+    		// const ENDPOINT = "https://faucet.chrysalis-devnet.iota.cafe/api/plugins/faucet/info";
+    		//shimmer
+    		// const ENDPOINT = "https://my.api.mockaroo.com/shimmer?key=aaf534d0"
+    		//iota
+    		const ENDPOINT = "https://my.api.mockaroo.com/iota?key=aaf534d0";
 
     		try {
-    			const res = await fetch(endpoint);
+    			const res = await fetch(ENDPOINT);
 
-    			if (res.status === 200) {
+    			if (res.status === 200 || res.status === 202) {
     				const data = await res.json();
-
-    				// setTimeout(() => {
-    				// errorMessage = "Could not obtain the network from the node.";
-    				// }, 2000);
-    				return setNetwork(networkDetector(data));
+    				if (data && data.data) return setNetwork(networkDetector(data.data));
+    				return $$invalidate(0, errorMessage = "Something went wrong fetching the network info, try again later.");
     			} else if (res.status === 429) {
-    				$$invalidate(0, errorMessage = "Too many requests. Try again later!");
+    				$$invalidate(0, errorMessage = "Too many requests. Please, try again later.");
+    			} else {
+    				$$invalidate(0, errorMessage = "Something went wrong. Please, try again later.");
     			}
     		} catch(error) {
-    			if (error.name === "AbortError") {
-    				timeout = true;
-    			}
-
     			$$invalidate(0, errorMessage = error);
     		}
-    	};
-
-    	onMount(async () => {
-    		getNetwork();
-    	});
-
-    	const networkParams = {
-    		shimmer: { token: "Shimmer", hint: "rms1..." },
-    		iota: { token: "IOTA", hint: "atoi1..." },
-    		whitelabel: { token: "Whitelabel", hint: "wlab1..." }
     	};
 
     	const writable_props = [];
@@ -1635,11 +1822,11 @@ var app = (function () {
     		errorMessage,
     		network,
     		networkIco,
+    		NETWORK_PARAMS,
     		setNetwork,
     		setTheme,
     		networkDetector,
-    		getNetwork,
-    		networkParams
+    		getNetwork
     	});
 
     	$$self.$inject_state = $$props => {
@@ -1652,7 +1839,7 @@ var app = (function () {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [errorMessage, network, networkIco, networkParams];
+    	return [errorMessage, network, networkIco, NETWORK_PARAMS];
     }
 
     class App extends SvelteComponentDev {

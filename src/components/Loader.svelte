@@ -1,8 +1,5 @@
-<script>
-</script>
-
 <main>
-    <h1>Waiting</h1>
+    <h1>Fetching network from node...</h1>
     <div class="spinner" />
 </main>
 

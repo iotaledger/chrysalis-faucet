@@ -1,42 +1,34 @@
 <script>
-    export let networkParams;
+    export let networkParams = {};
     $: ({ token, hint } = networkParams);
+    $: valid = address && address.length > 0;
+	import { fade } from 'svelte/transition';
 
     let waiting = false;
-    let valid = false;
     let done = false;
-    let timeout = false;
-    let address = "";
+    let address = null;
     let success = false;
 
     let data = null;
-    let errormsg = null;
-
-    function validate() {
-        done = false;
-        if (address.length >= 0) {
-            valid = true;
-        } else {
-            valid = false;
-            return false;
-        }
-    }
+    let errorMessage = null;
 
     async function requestTokens() {
-        if (!validate()) return;
         if (waiting) {
             return false;
         }
         waiting = true;
         let res = null;
         data = null;
-        errormsg = "Sending request...";
-
+        errorMessage = "Sending request...";
         try {
-            res = await fetch(`/api/enqueue`, {
+            res = await fetch("https://faucet.chrysalis-devnet.iota.cafe/api/plugins/faucet/enqueue", {
                 method: "POST",
+                mode: 'cors',
                 headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "POST",
                     Accept: "application/json",
+                    "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
@@ -44,21 +36,19 @@
                 }),
             });
             if (res.status === 202) {
-                data = await res.json();
-                errormsg = "OK";
+                errorMessage = "OK";
             } else if (res.status === 429) {
-                errormsg = "Too many requests. Try again later!";
+                errorMessage = "Too many requests. Try again later!";
             } else {
                 data = await res.json();
-                errormsg = data.error.message;
+                errorMessage = data.error.message;
             }
         } catch (error) {
             if (error.name === "AbortError") {
                 timeout = true;
             }
-            errormsg = error;
+            errorMessage = error;
         }
-
         success = res && res.status === 202;
         done = true;
         waiting = false;
@@ -66,7 +56,7 @@
     }
 </script>
 
-<main>
+<main in:fade>
     <p class="welcome">Welcome to</p>
     <h1>{token} Faucet</h1>
     <p class="help">
@@ -77,7 +67,7 @@
             {#if success}
                 <div>{token} will be sent to your address!</div>
             {:else}
-                <div>{errormsg}</div>
+                <div>{errorMessage}</div>
             {/if}
         </div>
     {:else}
@@ -93,12 +83,7 @@
     {/if}
     <div class="iota-input">
         <label for="address">{token} Address</label>
-        <input
-            type="text"
-            bind:value={address}
-            on:keyup={validate}
-            disabled={waiting}
-        />
+        <input type="text" bind:value={address} disabled={waiting} />
     </div>
     <div class="right">
         <button
@@ -135,8 +120,6 @@
     .warning {
         font-size: 12px;
         color: var(--title-color);
-        /* background: var(--box-color); */
-
         border-radius: 8px;
         padding: 10px 20px;
         margin-top: 1em;

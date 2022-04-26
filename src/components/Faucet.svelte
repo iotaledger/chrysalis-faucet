@@ -1,8 +1,8 @@
 <script>
-    export let networkParams = {};
-    $: ({ token, hint } = networkParams);
+    export let tokenName = "";
+    export let bech32HRP = "";
+    
     $: valid = address && address.length > 0;
-	import { fade } from 'svelte/transition';
 
     let waiting = false;
     let done = false;
@@ -21,7 +21,9 @@
         data = null;
         errorMessage = "Sending request...";
         try {
-            res = await fetch("https://faucet.chrysalis-devnet.iota.cafe/api/plugins/faucet/enqueue", {
+            // const ENDPOINT = "/api/enqueue";
+            const ENDPOINT = "https://faucet.chrysalis-devnet.iota.cafe/api/plugins/faucet/info";
+            res = await fetch(ENDPOINT, {
                 method: "POST",
                 mode: 'cors',
                 headers: {
@@ -56,16 +58,16 @@
     }
 </script>
 
-<main in:fade>
+<div>
     <p class="welcome">Welcome to</p>
-    <h1>{token} Faucet</h1>
+    <h1>{tokenName} Faucet</h1>
     <p class="help">
-        This service distributes tokens to the requested {token} address.
+        This service distributes tokens to the requested {tokenName} address.
     </p>
     {#if done}
         <div class="warning">
             {#if success}
-                <div>{token} will be sent to your address!</div>
+                <div>{tokenName} will be sent to your address!</div>
             {:else}
                 <div>{errorMessage}</div>
             {/if}
@@ -77,19 +79,19 @@
             {:else if valid}
                 Click the request button to receive your coins
             {:else}
-                Please enter a valid {token} address ({hint})
+                Please enter a valid {tokenName} address ({bech32HRP}...)
             {/if}
         </div>
     {/if}
     <div class="iota-input">
-        <label for="address">{token} Address</label>
+        <label for="address">{tokenName} Address</label>
         <input type="text" bind:value={address} disabled={waiting} />
     </div>
     <div class="right">
         <button
             type="button"
             on:click={requestTokens}
-            class:disabled={waiting || !valid}
+            disabled={waiting || !valid}
         >
             Request</button
         >
@@ -97,13 +99,9 @@
     <div class="illustration-container">
         <img src="./illustration.svg" alt="faucet" class="illustration" />
     </div>
-</main>
+</div>
 
 <style>
-    main {
-        margin-left: 10%;
-    }
-
     .right {
         text-align: right;
     }
@@ -119,7 +117,8 @@
 
     .warning {
         font-size: 12px;
-        color: var(--title-color);
+        color: var(--primary-text-color);
+        background-color: var(--box-color);
         border-radius: 8px;
         padding: 10px 20px;
         margin-top: 1em;
@@ -130,15 +129,6 @@
         color: var(--primary-color);
         text-transform: uppercase;
         font-size: 14px;
-        margin: 0;
-    }
-
-    h1 {
-        color: var(--title-color);
-        font-size: 32px;
-        font-family: "DMBold", sans-serif;
-        letter-spacing: 1px;
-        font-weight: 700;
         margin: 0;
     }
 
@@ -162,12 +152,41 @@
         width: 100%;
         border: none;
         padding: 20px 20px 10px;
-        border: solid 1px #d8e3f5;
+        border: solid 1px var(--border-color);
         border-radius: 10px;
         margin: 0;
         outline: none;
-        background: var(--box-color);
         font-size: 12px;
-        color: var(--title-color);
+        color: var(--primary-text-color);
+        background-color: var(--bg-color);
     }
+
+    .illustration-container {
+        width: 45%;
+        position: absolute;
+        right: 0;
+        top: 100px;
+    }
+
+    .illustration {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    @media screen and (max-width: 940px) {
+        .illustration-container {
+            width: 100%;
+            position: absolute;
+            right: 0;
+            top:500px;
+        }
+    }
+
+    @media screen and (max-width: 480px) {
+        .right button {
+            display: block;
+            width: 100%;
+        }
+    }
+
 </style>

@@ -1,22 +1,20 @@
-<main>
-    <h1>Fetching network from node...</h1>
+<div>
+    <p>Fetching network from node...</p>
     <div class="spinner" />
-</main>
+</div>
 
 <style>
-    main {
-        margin-left: 10%;
+    div { 
         display: flex;
-        flex-direction: column;
-        justify-content: center;
+        flex-direction: row;
         align-items: center;
     }
-
     .spinner {
         position: relative;
-        width: 80px;
-        height: 80px;
+        width: 20px;
+        height: 20px;
         border-radius: 50%;
+        margin-left: 10px;
     }
     .spinner::before,
     .spinner:after {
@@ -28,7 +26,7 @@
         width: 100%;
         height: 100%;
         background-image: linear-gradient(0deg, #ff00cc 0%, #333399 100%);
-        animation: spin 0.5s infinite linear;
+        animation: spin 2s infinite linear;
     }
     .spinner:after {
         width: 85%;

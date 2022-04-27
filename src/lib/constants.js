@@ -17,11 +17,13 @@ export const KNOWN_NETWORK_PARAMS = [
     bech32HRP: IOTA_BENCH32HRP,
     logo: "iota.svg",
     favicon: "iota-fav.ico",
+    illustration: "iota-illustration.svg",
   },
   {
     tokenName: SHIMMER_TOKEN_NAME,
     bech32HRP: SHIMMER_BENCH32HRP,
     logo: "shimmer.svg",
     favicon: "shimmer-fav.ico",
+    illustration: "shimmer-illustration.png",
   },
 ];

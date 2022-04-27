@@ -3,12 +3,12 @@
   import { fade } from "svelte/transition";
   import { Error, Faucet, Loader } from "./components";
   import {
+    ERROR_MESSAGES,
     IOTA_BENCH32HRP,
     IOTA_TOKEN_NAME,
+    KNOWN_NETWORK_PARAMS,
     SHIMMER_BENCH32HRP,
     SHIMMER_TOKEN_NAME,
-    KNOWN_NETWORK_PARAMS,
-    ERROR_MESSAGES,
   } from "./lib/constants.js";
 
   let errorMessage = null;
@@ -16,13 +16,22 @@
   let bech32HRP = null;
 
   $: detectedNetworkDefaultParams = KNOWN_NETWORK_PARAMS.find(
-    (networkParams) => {
-      if (tokenName)
-        tokenName.toLowerCase() === networkParams.tokenName.toLowerCase();
-    }
+    (networkParams) =>
+      tokenName &&
+      tokenName.toLowerCase() === networkParams.tokenName.toLowerCase()
   );
-  $: logo = detectedNetworkDefaultParams && detectedNetworkDefaultParams.logo ? detectedNetworkDefaultParams.logo : null;
-  $: favicon = detectedNetworkDefaultParams && detectedNetworkDefaultParams.favicon ? detectedNetworkDefaultParams.favicon : null;
+  $: logo =
+    detectedNetworkDefaultParams && detectedNetworkDefaultParams.logo
+      ? detectedNetworkDefaultParams.logo
+      : null;
+  $: favicon =
+    detectedNetworkDefaultParams && detectedNetworkDefaultParams.favicon
+      ? detectedNetworkDefaultParams.favicon
+      : null;
+  $: illustration =
+    detectedNetworkDefaultParams && detectedNetworkDefaultParams.illustration
+      ? detectedNetworkDefaultParams.illustration
+      : "whitelabel-illustration.svg";
 
   onMount(() => {
     void getNetwork();
@@ -96,7 +105,7 @@
             </div>
           {:else if tokenName && bech32HRP}
             <div in:fade>
-              <Faucet {bech32HRP} {tokenName} />
+              <Faucet {bech32HRP} {tokenName} {illustration} />
             </div>
           {:else}
             <div in:fade>

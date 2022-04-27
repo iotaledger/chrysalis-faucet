@@ -1,8 +1,9 @@
 <script>
   import { ERROR_MESSAGES} from "../lib/constants.js"
+
   export let tokenName = "";
   export let bech32HRP = "";
-
+  export let illustration = 'whitelabel-illustration.svg';
   
   $: valid = address && address.length > 0;
 
@@ -87,7 +88,7 @@
     >
   </div>
   <div class="illustration-container">
-    <img src="./illustration.svg" alt="faucet" class="illustration" />
+    <img src="./{illustration}" alt="faucet" class="illustration" />
   </div>
 </div>
 
@@ -161,6 +162,7 @@
   .illustration {
     max-width: 100%;
     width: 100%;
+    max-height: calc(100vh - 100px);
   }
 
   @media screen and (max-width: 940px) {

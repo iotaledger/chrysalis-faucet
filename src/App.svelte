@@ -38,7 +38,7 @@
   });
 
   const getNetwork = async () => {
-    const NODE_ENDPOINT = "/api/info";
+    const NODE_ENDPOINT = "/api/info";    
 
     try {
       const res = await fetch(NODE_ENDPOINT);
@@ -83,7 +83,7 @@
 <svelte:head>
   <title>{tokenName ? `${tokenName} ` : ""}Faucet</title>
   {#if favicon}
-    <link rel="icon" type="image/png" href={favicon} />
+    <link rel="icon" type="image/png" href={`/${favicon}`} />
   {/if}
 </svelte:head>
 

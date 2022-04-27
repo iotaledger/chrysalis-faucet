@@ -1,10 +1,15 @@
 <script>
-  import { ERROR_MESSAGES} from "../lib/constants.js"
-
+  import { bech32 } from "bech32";
+  import {
+    ERROR_MESSAGES,
+    IOTA_BENCH32HRP,
+    SHIMMER_BENCH32HRP,
+  } from "../lib/constants.js";
+  
   export let tokenName = "";
   export let bech32HRP = "";
-  export let illustration = 'whitelabel-illustration.svg';
-  
+  export let illustration = "whitelabel-illustration.svg";
+
   $: valid = address && address.length > 0;
 
   let isWaiting = false;
@@ -14,10 +19,26 @@
 
   let errorMessage = null;
 
+  function validateAddress() {
+    if (
+      bech32HRP === IOTA_BENCH32HRP &&
+      bech32HRP === bech32.decode(address).prefix
+    )
+      return true;
+    if (
+      bech32HRP === SHIMMER_BENCH32HRP &&
+      bech32HRP === bech32.decode(address).prefix
+    )
+      return true;
+    errorMessage = ERROR_MESSAGES.INVALID_ADDRESS;
+    return false;
+  }
+
   async function requestTokens() {
     if (isWaiting) {
       return false;
     }
+    if (!validateAddress()) return;
     isWaiting = true;
     let response = null;
     let data = null;
@@ -27,6 +48,10 @@
 
       response = await fetch(FAUCET_ENDPOINT, {
         method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           address: address,
         }),
@@ -35,7 +60,6 @@
         errorMessage = ERROR_MESSAGES.OK;
       } else if (response.status === 429) {
         errorMessage = ERROR_MESSAGES.TOO_MANY_REQUESTS;
-
       } else {
         data = await response.json();
         errorMessage = data.error.message;
@@ -83,7 +107,11 @@
     <input type="text" bind:value={address} disabled={isWaiting} />
   </div>
   <div class="right">
-    <button type="button" on:click={requestTokens} disabled={isWaiting || !valid}>
+    <button
+      type="button"
+      on:click={requestTokens}
+      disabled={isWaiting || !valid}
+    >
       Request</button
     >
   </div>

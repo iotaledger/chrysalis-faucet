@@ -1,199 +1,145 @@
 <script>
-    let waiting = false;
-    let valid = false;
-    let done = false;
-    let timeout = false;
-    let address = "";
-    let success = false;
-    let data = null;
-    let errormsg = null;
+  import { onMount } from "svelte";
+  import { fade } from "svelte/transition";
+  import { Error, Faucet, Loader } from "./components";
+  import {
+    ERROR_MESSAGES,
+    IOTA_BENCH32HRP,
+    IOTA_TOKEN_NAME,
+    KNOWN_NETWORK_PARAMS,
+    SHIMMER_BENCH32HRP,
+    SHIMMER_TOKEN_NAME,
+  } from "./lib/constants.js";
 
-    function validate(event) {
-        done = false;
-        valid = false;
-        if(address.length == 63 && address.startsWith("rms1q"))  {
-            valid = true;
-        }
-        
-        if(address.length == 44 && address.startsWith("rms1"))  {
-            valid = true;
-        }
+  let errorMessage = null;
+  let tokenName = null;
+  let bech32HRP = null;
 
-        if (address.length == 64 && address.startsWith("atoi1")) {
-            valid = true;
+  $: detectedNetworkDefaultParams = KNOWN_NETWORK_PARAMS.find(
+    (networkParams) =>
+      tokenName &&
+      tokenName.toLowerCase() === networkParams.tokenName.toLowerCase()
+  );
+  $: logo =
+    detectedNetworkDefaultParams && detectedNetworkDefaultParams.logo
+      ? detectedNetworkDefaultParams.logo
+      : null;
+  $: favicon =
+    detectedNetworkDefaultParams && detectedNetworkDefaultParams.favicon
+      ? detectedNetworkDefaultParams.favicon
+      : null;
+  $: illustration =
+    detectedNetworkDefaultParams && detectedNetworkDefaultParams.illustration
+      ? detectedNetworkDefaultParams.illustration
+      : "whitelabel-illustration.svg";
+
+  onMount(() => {
+    void getNetwork();
+  });
+
+  const getNetwork = async () => {
+    const NODE_ENDPOINT = "/api/info";    
+
+    try {
+      const res = await fetch(NODE_ENDPOINT);
+      if (res.status === 200 || res.status === 202) {
+        const response = await res.json();
+        if (response) {
+          const data = response.data ? response.data : response;
+          return setNetworkData(data);
         }
+        return (errorMessage = ERROR_MESSAGES.NODE_FETCHING_ERROR);
+      } else if (res.status === 429) {
+        return (errorMessage = ERROR_MESSAGES.TOO_MANY_REQUESTS);
+      } else {
+        return (errorMessage = ERROR_MESSAGES.NODE_FETCHING_ERROR);
+      }
+    } catch (error) {
+      console.error(error);
+      errorMessage = error;
     }
+  };
 
-    async function requestTokens(_event) {
-        if (waiting) {
-            return false;
-        }
-        waiting = true;
-        let res = null;
-        data = null;
-        errormsg = "Sending request...";
-
-        try {
-            res = await fetch(`/api/enqueue`, {
-                method: "POST",
-                headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    address: address,
-                }),
-            });
-            if (res.status === 202) {
-                errormsg = "OK";
-            } else if (res.status === 429) {
-                errormsg = "Too many requests. Try again later!";
-            } else {
-                data = await res.json();
-                errormsg = data.error.message;
-            }
-        } catch (error) {
-            if (error.name === "AbortError") {
-                timeout = true;
-            }
-            errormsg = error
-        }
-
-        success = res && res.status === 202;
-        done = true;
-        waiting = false;
-        address = "";
+  const setNetworkData = (data = {}) => {
+    if (data.tokenName) {
+      if (data.tokenName.toLowerCase() === IOTA_TOKEN_NAME.toLowerCase()) {
+        tokenName = data.tokenName ? data.tokenName : IOTA_TOKEN_NAME;
+        bech32HRP = data.bech32HRP ? data.bech32HRP : IOTA_BENCH32HRP;
+        document.body.classList.add("iota");
+      } else if (data.tokenName.toLowerCase() === SHIMMER_TOKEN_NAME.toLowerCase()) {
+        tokenName = data.tokenName ? data.tokenName : SHIMMER_TOKEN_NAME;
+        bech32HRP = data.bech32HRP ? data.bech32HRP : SHIMMER_BENCH32HRP;
+        document.body.classList.add("shimmer");
+      } else {
+        tokenName = data.tokenName ? data.tokenName : "Foo Bar";
+        bech32HRP = data.bech32HRP ? data.bech32HRP : "foo1";
+      }
+    } else {
+      errorMessage = ERROR_MESSAGES.NODE_FETCHING_ERROR;
     }
-
+  };
 </script>
 
-<main>
-    <p class="welcome">Welcome to</p>
-    <h1>IOTA Faucet</h1>
-    <p class="help">
-        This service distributes tokens to the requested IOTA address.
-    </p>
-    {#if done}
-        <div class="warning">
-            {#if success}
-                <div>IOTA will be sent to your address!</div>
-            {:else}
-                <div>{errormsg}</div>
-            {/if}
-        </div>
-    {:else}
-        <div class="warning">
-            {#if waiting}
-                Please wait...
-            {:else if valid}
-                Click the request button to receive your coins
-            {:else}
-                Please enter a valid IOTA address (atoi1/rms1...)
-            {/if}
-        </div>
-    {/if}
-    <div class="iota-input">
-        <label for="address">IOTA Address</label>
-        <input
-            type="text"
-            bind:value={address}
-            on:keyup={validate}
-            disabled={waiting}
-        />
+<svelte:head>
+  <title>{tokenName ? `${tokenName} ` : ""}Faucet</title>
+  {#if favicon}
+    <link rel="icon" type="image/png" href={`/${favicon}`} />
+  {/if}
+</svelte:head>
+
+<div>
+  <div class="content">
+    <div class="row">
+      <div class="col-xs-12">
+        {#if logo}
+          <img src={logo} class="logo" alt={tokenName} />
+        {/if}
+      </div>
     </div>
-    <div class="right">
-        <button
-            type="button"
-            on:click={requestTokens}
-            class:disabled={waiting || !valid}>Request</button
-        >
+    <div class="row contentrow">
+      <div class="col-lg-4">
+        <main>
+          {#if errorMessage}
+            <div in:fade>
+              <Error {errorMessage} />
+            </div>
+          {:else if tokenName && bech32HRP}
+            <div in:fade>
+              <Faucet {bech32HRP} {tokenName} {illustration} />
+            </div>
+          {:else}
+            <div in:fade>
+              <Loader />
+            </div>
+          {/if}
+        </main>
+      </div>
     </div>
-</main>
+  </div>
+</div>
 
 <style>
+  main {
+    background-color: var(--bg-color);
+    margin-left: 10%;
+    max-width: 380px;
+    transition: max-width 1s;
+  }
+
+  @media screen and (max-width: 940px) {
     main {
-        margin-left: 10%;
+      margin-left: 0;
+      max-width: none;
     }
+  }
 
-    .right {
-        text-align: right;
+  @media screen and (min-width: 1140px) {
+    main {
+      max-width: 480px;
     }
+  }
 
-    .right button {
-        background: #108cff;
-        cursor: pointer;
-        border-radius: 10px;
-        padding: 15px 50px;
-        color: #fff;
-        font-size: 13px;
-        margin: 20px 0 50px;
-        border: none;
-    }
-
-    .right button.disabled {
-        opacity: 0.5;
-    }
-
-    .help {
-        font-size: 13px;
-        color: #9aadce;
-        line-height: 160%;
-        font-weight: 400;
-        margin-top: 1em;
-        margin-bottom: 2em;
-    }
-
-    .warning {
-        font-size: 12px;
-        color: #25395f;
-        background: #f6f9ff;
-        border-radius: 8px;
-        padding: 10px 20px;
-        margin-top: 1em;
-        word-break: break-word;
-    }
-
-    .welcome {
-        color: #108cff;
-        text-transform: uppercase;
-        font-size: 14px;
-        margin: 0;
-    }
-
-    h1 {
-        color: #25395f;
-        font-size: 32px;
-        font-family: "DMBold", sans-serif;
-        letter-spacing: 1px;
-        font-weight: 700;
-        margin: 0;
-    }
-
-    .iota-input {
-        width: 100%;
-        padding: 0;
-        position: relative;
-        background: #fff;
-        margin-top: 10px;
-    }
-
-    .iota-input label {
-        font-size: 10px;
-        line-height: 12px;
-        color: #9aadce;
-        position: absolute;
-        top: 7px;
-        left: 20px;
-    }
-    .iota-input input {
-        width: 100%;
-        border: none;
-        padding: 20px 20px 10px;
-        border: solid 1px #d8e3f5;
-        border-radius: 10px;
-        margin: 0;
-        outline: none;
-        background: #fff;
-        font-size: 12px;
-    }
+  .logo {
+    height: 64px;
+  }
 </style>

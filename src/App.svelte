@@ -61,12 +61,12 @@
   };
 
   const setNetworkData = (data = {}) => {
-    if (data.address) {
-      if (data.address.startsWith(IOTA_BENCH32HRP)) {
+    if (data.tokenName) {
+      if (data.tokenName.toLowerCase() === IOTA_TOKEN_NAME.toLowerCase()) {
         tokenName = data.tokenName ? data.tokenName : IOTA_TOKEN_NAME;
         bech32HRP = data.bech32HRP ? data.bech32HRP : IOTA_BENCH32HRP;
         document.body.classList.add("iota");
-      } else if (data.address.startsWith(SHIMMER_BENCH32HRP)) {
+      } else if (data.tokenName.toLowerCase() === SHIMMER_TOKEN_NAME.toLowerCase()) {
         tokenName = data.tokenName ? data.tokenName : SHIMMER_TOKEN_NAME;
         bech32HRP = data.bech32HRP ? data.bech32HRP : SHIMMER_BENCH32HRP;
         document.body.classList.add("shimmer");

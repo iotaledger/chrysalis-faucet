@@ -32,8 +32,10 @@ body.iota {
 /* Shimmer Theme */
 body.shimmer {
   --bg-color: rgb(6, 26, 40);
-  --primary-color: rgb(0, 224, 202);
+  --primary-color: rgb(1, 173, 156);
   --primary-text-color: white;
+  --box-color: #1b303e;
+  --border-color: #1b303e;
 }
 
 html,

@@ -1,50 +1,42 @@
 <script>
+  import { ERROR_MESSAGES} from "../lib/constants.js"
   export let tokenName = "";
   export let bech32HRP = "";
 
+  
   $: valid = address && address.length > 0;
 
-  let waiting = false;
-  let done = false;
+  let isWaiting = false;
+  let isDone = false;
   let address = null;
-  let success = false;
+  let hasSucceeded = false;
 
-  let data = null;
   let errorMessage = null;
 
   async function requestTokens() {
-    if (waiting) {
+    if (isWaiting) {
       return false;
     }
-    waiting = true;
-    let res = null;
-    data = null;
-    errorMessage = "Sending request...";
+    isWaiting = true;
+    let response = null;
+    let data = null;
+    errorMessage = ERROR_MESSAGES.SENDING_REQUEST;
     try {
-      // const ENDPOINT = "/api/enqueue";
-      const ENDPOINT =
-        "https://faucet.chrysalis-devnet.iota.cafe/api/plugins/faucet/info";
-      res = await fetch(ENDPOINT, {
+      const FAUCET_ENDPOINT = "/api/enqueue";
+
+      response = await fetch(FAUCET_ENDPOINT, {
         method: "POST",
-        mode: "cors",
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST",
-          Accept: "application/json",
-          "Access-Control-Allow-Headers":
-            "Origin, X-Requested-With, Content-Type, Accept, Authorization",
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           address: address,
         }),
       });
-      if (res.status === 202) {
-        errorMessage = "OK";
-      } else if (res.status === 429) {
-        errorMessage = "Too many requests. Try again later!";
+      if (response.status === 202) {
+        errorMessage = ERROR_MESSAGES.OK;
+      } else if (response.status === 429) {
+        errorMessage = ERROR_MESSAGES.TOO_MANY_REQUESTS;
+
       } else {
-        data = await res.json();
+        data = await response.json();
         errorMessage = data.error.message;
       }
     } catch (error) {
@@ -53,9 +45,9 @@
       }
       errorMessage = error;
     }
-    success = res && res.status === 202;
-    done = true;
-    waiting = false;
+    hasSucceeded = response && response.status === 202;
+    isDone = true;
+    isWaiting = false;
     address = "";
   }
 </script>
@@ -66,9 +58,9 @@
   <p class="help">
     This service distributes tokens to the requested {tokenName} address.
   </p>
-  {#if done}
+  {#if isDone}
     <div class="warning">
-      {#if success}
+      {#if hasSucceeded}
         <div>{tokenName} will be sent to your address!</div>
       {:else}
         <div>{errorMessage}</div>
@@ -76,21 +68,21 @@
     </div>
   {:else}
     <div class="warning">
-      {#if waiting}
+      {#if isWaiting}
         Please wait...
       {:else if valid}
         Click the request button to receive your coins
       {:else}
-        Please enter a valid {tokenName} address ({bech32HRP}...)
+        Please enter a valid {tokenName} address ({bech32HRP}1...)
       {/if}
     </div>
   {/if}
   <div class="iota-input">
     <label for="address">{tokenName} Address</label>
-    <input type="text" bind:value={address} disabled={waiting} />
+    <input type="text" bind:value={address} disabled={isWaiting} />
   </div>
   <div class="right">
-    <button type="button" on:click={requestTokens} disabled={waiting || !valid}>
+    <button type="button" on:click={requestTokens} disabled={isWaiting || !valid}>
       Request</button
     >
   </div>

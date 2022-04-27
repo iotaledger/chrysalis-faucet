@@ -2,61 +2,48 @@
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { Error, Faucet, Loader } from "./components";
-
-  const IOTA_BENCH32HRP = "atoi1";
-  const IOTA_TOKEN_NAME = "IOTA";
-  const SHIMMER_BENCH32HRP = "rms1";
-  const SHIMMER_TOKEN_NAME = "Shimmer";
-
-  const KNOWN_NETWORK_PARAMS = [
-    {
-      tokenName: IOTA_TOKEN_NAME,
-      bech32HRP: IOTA_BENCH32HRP,
-      logo: "iota.svg",
-      favicon: "iota-fav.ico",
-    },
-    {
-      tokenName: SHIMMER_TOKEN_NAME,
-      bech32HRP: SHIMMER_BENCH32HRP,
-      logo: "shimmer.svg",
-      favicon: "shimmer-fav.ico",
-    },
-  ];
+  import {
+    IOTA_BENCH32HRP,
+    IOTA_TOKEN_NAME,
+    SHIMMER_BENCH32HRP,
+    SHIMMER_TOKEN_NAME,
+    KNOWN_NETWORK_PARAMS,
+    ERROR_MESSAGES,
+  } from "./lib/constants.js";
 
   let errorMessage = null;
   let tokenName = null;
   let bech32HRP = null;
 
-  $: knownNetworkParams = KNOWN_NETWORK_PARAMS.find(
-    (networkParams) => networkParams.bech32HRP === bech32HRP
+  $: detectedNetworkDefaultParams = KNOWN_NETWORK_PARAMS.find(
+    (networkParams) => {
+      if (tokenName)
+        tokenName.toLowerCase() === networkParams.tokenName.toLowerCase();
+    }
   );
-  $: logo = knownNetworkParams ? knownNetworkParams.logo : null;
-  $: favicon = knownNetworkParams ? knownNetworkParams.favicon : null;
+  $: logo = detectedNetworkDefaultParams && detectedNetworkDefaultParams.logo ? detectedNetworkDefaultParams.logo : null;
+  $: favicon = detectedNetworkDefaultParams && detectedNetworkDefaultParams.favicon ? detectedNetworkDefaultParams.favicon : null;
 
   onMount(() => {
     void getNetwork();
   });
 
   const getNetwork = async () => {
-    // const ENDPOINT = "/api/info";
-    // const ENDPOINT = "https://faucet.alphanet.iotaledger.net/api/plugins/faucet/v1/info";
-    const ENDPOINT =
-      "https://faucet.chrysalis-devnet.iota.cafe/api/plugins/faucet/info";
+    const NODE_ENDPOINT = "/api/info";
 
     try {
-      const res = await fetch(ENDPOINT);
+      const res = await fetch(NODE_ENDPOINT);
       if (res.status === 200 || res.status === 202) {
         const response = await res.json();
         if (response) {
           const data = response.data ? response.data : response;
           return setNetworkData(data);
         }
-        return (errorMessage =
-          "Something went wrong fetching the network info. Please, try again later.");
+        return (errorMessage = ERROR_MESSAGES.NODE_FETCHING_ERROR);
       } else if (res.status === 429) {
-        errorMessage = "Too many requests. Please, try again later.";
+        return (errorMessage = ERROR_MESSAGES.TOO_MANY_REQUESTS);
       } else {
-        errorMessage = "Something went wrong. Please, try again later.";
+        return (errorMessage = ERROR_MESSAGES.NODE_FETCHING_ERROR);
       }
     } catch (error) {
       console.error(error);
@@ -66,11 +53,11 @@
 
   const setNetworkData = (data = {}) => {
     if (data.address) {
-      if (data.address.indexOf(IOTA_BENCH32HRP) === 0) {
+      if (data.address.startsWith(IOTA_BENCH32HRP)) {
         tokenName = data.tokenName ? data.tokenName : IOTA_TOKEN_NAME;
         bech32HRP = data.bech32HRP ? data.bech32HRP : IOTA_BENCH32HRP;
         document.body.classList.add("iota");
-      } else if (data.address.indexOf(SHIMMER_BENCH32HRP) === 0) {
+      } else if (data.address.startsWith(SHIMMER_BENCH32HRP)) {
         tokenName = data.tokenName ? data.tokenName : SHIMMER_TOKEN_NAME;
         bech32HRP = data.bech32HRP ? data.bech32HRP : SHIMMER_BENCH32HRP;
         document.body.classList.add("shimmer");
@@ -79,8 +66,7 @@
         bech32HRP = data.bech32HRP ? data.bech32HRP : "foo1";
       }
     } else {
-      errorMessage =
-        "Something went wrong fetching the network info. Please, try again later.";
+      errorMessage = ERROR_MESSAGES.NODE_FETCHING_ERROR;
     }
   };
 </script>

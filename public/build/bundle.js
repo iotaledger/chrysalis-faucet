@@ -720,7 +720,8 @@ var app = (function () {
         NODE_FETCHING_ERROR:"Something went wrong fetching the network info. Please, try again later.",
         TOO_MANY_REQUESTS:"Too many requests. Please, try again later.",
         SENDING_REQUEST:"Sending request...",
-        OK:"OK"
+        OK:"OK",
+        INVALID_ADDRESS:"This address is not valid."
     };
 
     const IOTA_BENCH32HRP = "atoi";
@@ -743,10 +744,196 @@ var app = (function () {
       },
     ];
 
+    function createCommonjsModule(fn, basedir, module) {
+    	return module = {
+    		path: basedir,
+    		exports: {},
+    		require: function (path, base) {
+    			return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
+    		}
+    	}, fn(module, module.exports), module.exports;
+    }
+
+    function commonjsRequire () {
+    	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
+    }
+
+    var dist = createCommonjsModule(function (module, exports) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.bech32m = exports.bech32 = void 0;
+    const ALPHABET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+    const ALPHABET_MAP = {};
+    for (let z = 0; z < ALPHABET.length; z++) {
+        const x = ALPHABET.charAt(z);
+        ALPHABET_MAP[x] = z;
+    }
+    function polymodStep(pre) {
+        const b = pre >> 25;
+        return (((pre & 0x1ffffff) << 5) ^
+            (-((b >> 0) & 1) & 0x3b6a57b2) ^
+            (-((b >> 1) & 1) & 0x26508e6d) ^
+            (-((b >> 2) & 1) & 0x1ea119fa) ^
+            (-((b >> 3) & 1) & 0x3d4233dd) ^
+            (-((b >> 4) & 1) & 0x2a1462b3));
+    }
+    function prefixChk(prefix) {
+        let chk = 1;
+        for (let i = 0; i < prefix.length; ++i) {
+            const c = prefix.charCodeAt(i);
+            if (c < 33 || c > 126)
+                return 'Invalid prefix (' + prefix + ')';
+            chk = polymodStep(chk) ^ (c >> 5);
+        }
+        chk = polymodStep(chk);
+        for (let i = 0; i < prefix.length; ++i) {
+            const v = prefix.charCodeAt(i);
+            chk = polymodStep(chk) ^ (v & 0x1f);
+        }
+        return chk;
+    }
+    function convert(data, inBits, outBits, pad) {
+        let value = 0;
+        let bits = 0;
+        const maxV = (1 << outBits) - 1;
+        const result = [];
+        for (let i = 0; i < data.length; ++i) {
+            value = (value << inBits) | data[i];
+            bits += inBits;
+            while (bits >= outBits) {
+                bits -= outBits;
+                result.push((value >> bits) & maxV);
+            }
+        }
+        if (pad) {
+            if (bits > 0) {
+                result.push((value << (outBits - bits)) & maxV);
+            }
+        }
+        else {
+            if (bits >= inBits)
+                return 'Excess padding';
+            if ((value << (outBits - bits)) & maxV)
+                return 'Non-zero padding';
+        }
+        return result;
+    }
+    function toWords(bytes) {
+        return convert(bytes, 8, 5, true);
+    }
+    function fromWordsUnsafe(words) {
+        const res = convert(words, 5, 8, false);
+        if (Array.isArray(res))
+            return res;
+    }
+    function fromWords(words) {
+        const res = convert(words, 5, 8, false);
+        if (Array.isArray(res))
+            return res;
+        throw new Error(res);
+    }
+    function getLibraryFromEncoding(encoding) {
+        let ENCODING_CONST;
+        if (encoding === 'bech32') {
+            ENCODING_CONST = 1;
+        }
+        else {
+            ENCODING_CONST = 0x2bc830a3;
+        }
+        function encode(prefix, words, LIMIT) {
+            LIMIT = LIMIT || 90;
+            if (prefix.length + 7 + words.length > LIMIT)
+                throw new TypeError('Exceeds length limit');
+            prefix = prefix.toLowerCase();
+            // determine chk mod
+            let chk = prefixChk(prefix);
+            if (typeof chk === 'string')
+                throw new Error(chk);
+            let result = prefix + '1';
+            for (let i = 0; i < words.length; ++i) {
+                const x = words[i];
+                if (x >> 5 !== 0)
+                    throw new Error('Non 5-bit word');
+                chk = polymodStep(chk) ^ x;
+                result += ALPHABET.charAt(x);
+            }
+            for (let i = 0; i < 6; ++i) {
+                chk = polymodStep(chk);
+            }
+            chk ^= ENCODING_CONST;
+            for (let i = 0; i < 6; ++i) {
+                const v = (chk >> ((5 - i) * 5)) & 0x1f;
+                result += ALPHABET.charAt(v);
+            }
+            return result;
+        }
+        function __decode(str, LIMIT) {
+            LIMIT = LIMIT || 90;
+            if (str.length < 8)
+                return str + ' too short';
+            if (str.length > LIMIT)
+                return 'Exceeds length limit';
+            // don't allow mixed case
+            const lowered = str.toLowerCase();
+            const uppered = str.toUpperCase();
+            if (str !== lowered && str !== uppered)
+                return 'Mixed-case string ' + str;
+            str = lowered;
+            const split = str.lastIndexOf('1');
+            if (split === -1)
+                return 'No separator character for ' + str;
+            if (split === 0)
+                return 'Missing prefix for ' + str;
+            const prefix = str.slice(0, split);
+            const wordChars = str.slice(split + 1);
+            if (wordChars.length < 6)
+                return 'Data too short';
+            let chk = prefixChk(prefix);
+            if (typeof chk === 'string')
+                return chk;
+            const words = [];
+            for (let i = 0; i < wordChars.length; ++i) {
+                const c = wordChars.charAt(i);
+                const v = ALPHABET_MAP[c];
+                if (v === undefined)
+                    return 'Unknown character ' + c;
+                chk = polymodStep(chk) ^ v;
+                // not in the checksum?
+                if (i + 6 >= wordChars.length)
+                    continue;
+                words.push(v);
+            }
+            if (chk !== ENCODING_CONST)
+                return 'Invalid checksum for ' + str;
+            return { prefix, words };
+        }
+        function decodeUnsafe(str, LIMIT) {
+            const res = __decode(str, LIMIT);
+            if (typeof res === 'object')
+                return res;
+        }
+        function decode(str, LIMIT) {
+            const res = __decode(str, LIMIT);
+            if (typeof res === 'object')
+                return res;
+            throw new Error(res);
+        }
+        return {
+            decodeUnsafe,
+            decode,
+            encode,
+            toWords,
+            fromWordsUnsafe,
+            fromWords,
+        };
+    }
+    exports.bech32 = getLibraryFromEncoding('bech32');
+    exports.bech32m = getLibraryFromEncoding('bech32m');
+    });
+
     /* src/components/Faucet.svelte generated by Svelte v3.42.3 */
     const file$2 = "src/components/Faucet.svelte";
 
-    // (69:2) {:else}
+    // (82:2) {:else}
     function create_else_block_1(ctx) {
     	let div;
 
@@ -764,7 +951,7 @@ var app = (function () {
     			div = element("div");
     			if_block.c();
     			attr_dev(div, "class", "warning svelte-1ueoti6");
-    			add_location(div, file$2, 69, 4, 1636);
+    			add_location(div, file$2, 82, 4, 2167);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -793,14 +980,14 @@ var app = (function () {
     		block,
     		id: create_else_block_1.name,
     		type: "else",
-    		source: "(69:2) {:else}",
+    		source: "(82:2) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (61:2) {#if isDone}
+    // (74:2) {#if isDone}
     function create_if_block$1(ctx) {
     	let div;
 
@@ -817,7 +1004,7 @@ var app = (function () {
     			div = element("div");
     			if_block.c();
     			attr_dev(div, "class", "warning svelte-1ueoti6");
-    			add_location(div, file$2, 61, 4, 1443);
+    			add_location(div, file$2, 74, 4, 1974);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -846,14 +1033,14 @@ var app = (function () {
     		block,
     		id: create_if_block$1.name,
     		type: "if",
-    		source: "(61:2) {#if isDone}",
+    		source: "(74:2) {#if isDone}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (75:6) {:else}
+    // (88:6) {:else}
     function create_else_block_2(ctx) {
     	let t0;
     	let t1;
@@ -893,14 +1080,14 @@ var app = (function () {
     		block,
     		id: create_else_block_2.name,
     		type: "else",
-    		source: "(75:6) {:else}",
+    		source: "(88:6) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (73:22) 
+    // (86:22) 
     function create_if_block_3$1(ctx) {
     	let t;
 
@@ -921,14 +1108,14 @@ var app = (function () {
     		block,
     		id: create_if_block_3$1.name,
     		type: "if",
-    		source: "(73:22) ",
+    		source: "(86:22) ",
     		ctx
     	});
 
     	return block;
     }
 
-    // (71:6) {#if isWaiting}
+    // (84:6) {#if isWaiting}
     function create_if_block_2$1(ctx) {
     	let t;
 
@@ -949,14 +1136,14 @@ var app = (function () {
     		block,
     		id: create_if_block_2$1.name,
     		type: "if",
-    		source: "(71:6) {#if isWaiting}",
+    		source: "(84:6) {#if isWaiting}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (65:6) {:else}
+    // (78:6) {:else}
     function create_else_block$1(ctx) {
     	let div;
     	let t;
@@ -965,7 +1152,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			t = text(/*errorMessage*/ ctx[6]);
-    			add_location(div, file$2, 65, 8, 1573);
+    			add_location(div, file$2, 78, 8, 2104);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -983,14 +1170,14 @@ var app = (function () {
     		block,
     		id: create_else_block$1.name,
     		type: "else",
-    		source: "(65:6) {:else}",
+    		source: "(78:6) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (63:6) {#if hasSucceeded}
+    // (76:6) {#if hasSucceeded}
     function create_if_block_1$1(ctx) {
     	let div;
     	let t0;
@@ -1001,7 +1188,7 @@ var app = (function () {
     			div = element("div");
     			t0 = text(/*tokenName*/ ctx[0]);
     			t1 = text(" will be sent to your address!");
-    			add_location(div, file$2, 63, 8, 1498);
+    			add_location(div, file$2, 76, 8, 2029);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -1020,7 +1207,7 @@ var app = (function () {
     		block,
     		id: create_if_block_1$1.name,
     		type: "if",
-    		source: "(63:6) {#if hasSucceeded}",
+    		source: "(76:6) {#if hasSucceeded}",
     		ctx
     	});
 
@@ -1098,32 +1285,32 @@ var app = (function () {
     			div2 = element("div");
     			img = element("img");
     			attr_dev(p0, "class", "welcome svelte-1ueoti6");
-    			add_location(p0, file$2, 55, 2, 1260);
-    			add_location(h1, file$2, 56, 2, 1296);
+    			add_location(p0, file$2, 68, 2, 1791);
+    			add_location(h1, file$2, 69, 2, 1827);
     			attr_dev(p1, "class", "help svelte-1ueoti6");
-    			add_location(p1, file$2, 57, 2, 1326);
+    			add_location(p1, file$2, 70, 2, 1857);
     			attr_dev(label, "for", "address");
     			attr_dev(label, "class", "svelte-1ueoti6");
-    			add_location(label, file$2, 80, 4, 1924);
+    			add_location(label, file$2, 93, 4, 2455);
     			attr_dev(input, "type", "text");
     			input.disabled = /*isWaiting*/ ctx[3];
     			attr_dev(input, "class", "svelte-1ueoti6");
-    			add_location(input, file$2, 81, 4, 1977);
+    			add_location(input, file$2, 94, 4, 2508);
     			attr_dev(div0, "class", "iota-input svelte-1ueoti6");
-    			add_location(div0, file$2, 79, 2, 1895);
+    			add_location(div0, file$2, 92, 2, 2426);
     			attr_dev(button, "type", "button");
     			button.disabled = button_disabled_value = /*isWaiting*/ ctx[3] || !/*valid*/ ctx[7];
     			attr_dev(button, "class", "svelte-1ueoti6");
-    			add_location(button, file$2, 84, 4, 2076);
+    			add_location(button, file$2, 97, 4, 2607);
     			attr_dev(div1, "class", "right svelte-1ueoti6");
-    			add_location(div1, file$2, 83, 2, 2052);
+    			add_location(div1, file$2, 96, 2, 2583);
     			if (!src_url_equal(img.src, img_src_value = "./illustration.svg")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "faucet");
     			attr_dev(img, "class", "illustration svelte-1ueoti6");
-    			add_location(img, file$2, 89, 4, 2235);
+    			add_location(img, file$2, 102, 4, 2766);
     			attr_dev(div2, "class", "illustration-container svelte-1ueoti6");
-    			add_location(div2, file$2, 88, 2, 2194);
-    			add_location(div3, file$2, 54, 0, 1252);
+    			add_location(div2, file$2, 101, 2, 2725);
+    			add_location(div3, file$2, 67, 0, 1783);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1230,11 +1417,19 @@ var app = (function () {
     	let hasSucceeded = false;
     	let errorMessage = null;
 
+    	function validateAddress() {
+    		if (bech32HRP === IOTA_BENCH32HRP && bech32HRP === dist.bech32.decode(address).prefix) return true;
+    		if (bech32HRP === SHIMMER_BENCH32HRP && bech32HRP === dist.bech32.decode(address).prefix) return true;
+    		$$invalidate(6, errorMessage = ERROR_MESSAGES.INVALID_ADDRESS);
+    		return false;
+    	}
+
     	async function requestTokens() {
     		if (isWaiting) {
     			return false;
     		}
 
+    		if (!validateAddress()) return;
     		$$invalidate(3, isWaiting = true);
     		let response = null;
     		let data = null;
@@ -1245,6 +1440,10 @@ var app = (function () {
 
     			response = await fetch(FAUCET_ENDPOINT, {
     				method: "POST",
+    				headers: {
+    					Accept: "application/json",
+    					"Content-Type": "application/json"
+    				},
     				body: JSON.stringify({ address })
     			});
 
@@ -1288,6 +1487,9 @@ var app = (function () {
 
     	$$self.$capture_state = () => ({
     		ERROR_MESSAGES,
+    		IOTA_BENCH32HRP,
+    		SHIMMER_BENCH32HRP,
+    		bech32: dist.bech32,
     		tokenName,
     		bech32HRP,
     		isWaiting,
@@ -1295,6 +1497,7 @@ var app = (function () {
     		address,
     		hasSucceeded,
     		errorMessage,
+    		validateAddress,
     		requestTokens,
     		valid
     	});
@@ -1447,24 +1650,25 @@ var app = (function () {
 
     const file = "src/App.svelte";
 
-    // (76:2) {#if favicon}
+    // (75:2) {#if favicon}
     function create_if_block_3(ctx) {
     	let link;
+    	let link_href_value;
 
     	const block = {
     		c: function create() {
     			link = element("link");
     			attr_dev(link, "rel", "icon");
     			attr_dev(link, "type", "image/png");
-    			attr_dev(link, "href", /*favicon*/ ctx[3]);
-    			add_location(link, file, 76, 4, 2518);
+    			attr_dev(link, "href", link_href_value = `/${/*favicon*/ ctx[3]}`);
+    			add_location(link, file, 75, 4, 2521);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, link, anchor);
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*favicon*/ 8) {
-    				attr_dev(link, "href", /*favicon*/ ctx[3]);
+    			if (dirty & /*favicon*/ 8 && link_href_value !== (link_href_value = `/${/*favicon*/ ctx[3]}`)) {
+    				attr_dev(link, "href", link_href_value);
     			}
     		},
     		d: function destroy(detaching) {
@@ -1476,14 +1680,14 @@ var app = (function () {
     		block,
     		id: create_if_block_3.name,
     		type: "if",
-    		source: "(76:2) {#if favicon}",
+    		source: "(75:2) {#if favicon}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (85:8) {#if logo}
+    // (84:8) {#if logo}
     function create_if_block_2(ctx) {
     	let img;
     	let img_src_value;
@@ -1494,7 +1698,7 @@ var app = (function () {
     			if (!src_url_equal(img.src, img_src_value = /*logo*/ ctx[4])) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "class", "logo svelte-1tgim9i");
     			attr_dev(img, "alt", /*tokenName*/ ctx[0]);
-    			add_location(img, file, 85, 10, 2705);
+    			add_location(img, file, 84, 10, 2714);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, img, anchor);
@@ -1517,14 +1721,14 @@ var app = (function () {
     		block,
     		id: create_if_block_2.name,
     		type: "if",
-    		source: "(85:8) {#if logo}",
+    		source: "(84:8) {#if logo}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (101:10) {:else}
+    // (100:10) {:else}
     function create_else_block(ctx) {
     	let div;
     	let loader;
@@ -1536,7 +1740,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			create_component(loader.$$.fragment);
-    			add_location(div, file, 101, 12, 3149);
+    			add_location(div, file, 100, 12, 3158);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -1571,14 +1775,14 @@ var app = (function () {
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(101:10) {:else}",
+    		source: "(100:10) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (97:43) 
+    // (96:43) 
     function create_if_block_1(ctx) {
     	let div;
     	let faucet;
@@ -1597,7 +1801,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			create_component(faucet.$$.fragment);
-    			add_location(div, file, 97, 12, 3037);
+    			add_location(div, file, 96, 12, 3046);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -1637,14 +1841,14 @@ var app = (function () {
     		block,
     		id: create_if_block_1.name,
     		type: "if",
-    		source: "(97:43) ",
+    		source: "(96:43) ",
     		ctx
     	});
 
     	return block;
     }
 
-    // (93:10) {#if errorMessage}
+    // (92:10) {#if errorMessage}
     function create_if_block(ctx) {
     	let div;
     	let error;
@@ -1660,7 +1864,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			create_component(error.$$.fragment);
-    			add_location(div, file, 93, 12, 2909);
+    			add_location(div, file, 92, 12, 2918);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -1699,7 +1903,7 @@ var app = (function () {
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(93:10) {#if errorMessage}",
+    		source: "(92:10) {#if errorMessage}",
     		ctx
     	});
 
@@ -1752,18 +1956,18 @@ var app = (function () {
     			main = element("main");
     			if_block2.c();
     			attr_dev(div0, "class", "col-xs-12");
-    			add_location(div0, file, 83, 6, 2652);
+    			add_location(div0, file, 82, 6, 2661);
     			attr_dev(div1, "class", "row");
-    			add_location(div1, file, 82, 4, 2628);
+    			add_location(div1, file, 81, 4, 2637);
     			attr_dev(main, "class", "svelte-1tgim9i");
-    			add_location(main, file, 91, 8, 2861);
+    			add_location(main, file, 90, 8, 2870);
     			attr_dev(div2, "class", "col-lg-4");
-    			add_location(div2, file, 90, 6, 2830);
+    			add_location(div2, file, 89, 6, 2839);
     			attr_dev(div3, "class", "row contentrow");
-    			add_location(div3, file, 89, 4, 2795);
+    			add_location(div3, file, 88, 4, 2804);
     			attr_dev(div4, "class", "content");
-    			add_location(div4, file, 81, 2, 2602);
-    			add_location(div5, file, 80, 0, 2594);
+    			add_location(div4, file, 80, 2, 2611);
+    			add_location(div5, file, 79, 0, 2603);
     		},
     		l: function claim(nodes) {
     			throw new Error_1("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1974,7 +2178,7 @@ var app = (function () {
     	$$self.$$.update = () => {
     		if ($$self.$$.dirty & /*tokenName*/ 1) {
     			$$invalidate(5, detectedNetworkDefaultParams = KNOWN_NETWORK_PARAMS.find(networkParams => {
-    				if (tokenName) tokenName.toLowerCase() === networkParams.tokenName.toLowerCase();
+    				if (tokenName) return tokenName.toLowerCase() === networkParams.tokenName.toLowerCase();
     			}));
     		}
 

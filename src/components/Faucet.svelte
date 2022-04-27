@@ -1,5 +1,6 @@
 <script>
-  import { ERROR_MESSAGES} from "../lib/constants.js"
+  import { ERROR_MESSAGES,IOTA_BENCH32HRP,SHIMMER_BENCH32HRP} from "../lib/constants.js"
+  import {bech32} from "bech32"
   export let tokenName = "";
   export let bech32HRP = "";
 
@@ -13,19 +14,31 @@
 
   let errorMessage = null;
 
+  function validateAddress () {
+    if(bech32HRP === IOTA_BENCH32HRP && bech32HRP === bech32.decode(address).prefix) return true;
+    if(bech32HRP === SHIMMER_BENCH32HRP && bech32HRP === bech32.decode(address).prefix) return true;
+    errorMessage = ERROR_MESSAGES.INVALID_ADDRESS;
+    return false;
+  }
+
   async function requestTokens() {
     if (isWaiting) {
       return false;
     }
+    if(!validateAddress()) return;
     isWaiting = true;
     let response = null;
     let data = null;
     errorMessage = ERROR_MESSAGES.SENDING_REQUEST;
     try {
       const FAUCET_ENDPOINT = "/api/enqueue";
-
+      
       response = await fetch(FAUCET_ENDPOINT, {
         method: "POST",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           address: address,
         }),

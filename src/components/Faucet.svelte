@@ -1,16 +1,12 @@
 <script>
   import { bech32 } from "bech32";
-  import {
-    ERROR_MESSAGES,
-    IOTA_BENCH32HRP,
-    SHIMMER_BENCH32HRP,
-  } from "../lib/constants.js";
-  
-  export let tokenName = "";
-  export let bech32HRP = "";
+  import { ERROR_MESSAGES } from "../lib/constants.js";
+
+  export let tokenName;
+  export let bech32HRP;
   export let illustration = "whitelabel-illustration.svg";
 
-  $: valid = address && address.length > 0;
+  $: valid = isValidBench32Address(address);
 
   let isWaiting = false;
   let isDone = false;
@@ -19,26 +15,23 @@
 
   let errorMessage = null;
 
-  function validateAddress() {
-    if (
-      bech32HRP === IOTA_BENCH32HRP &&
-      bech32HRP === bech32.decode(address).prefix
-    )
-      return true;
-    if (
-      bech32HRP === SHIMMER_BENCH32HRP &&
-      bech32HRP === bech32.decode(address).prefix
-    )
-      return true;
-    errorMessage = ERROR_MESSAGES.INVALID_ADDRESS;
-    return false;
+  function isValidBench32Address(_address) {
+    if (!_address || !bech32HRP) {
+      return false;
+    } else {
+      try {
+        const decodedAddress = bech32.decode(_address);
+        return decodedAddress && decodedAddress.prefix === bech32HRP;
+      } catch(e) {
+        return false;
+      }
+    }
   }
 
   async function requestTokens() {
     if (isWaiting) {
       return false;
     }
-    if (!validateAddress()) return;
     isWaiting = true;
     let response = null;
     let data = null;
@@ -190,7 +183,7 @@
   .illustration {
     max-width: 100%;
     width: 100%;
-    max-height: calc(100vh - 100px);
+    max-height: calc(100vh - 150px);
   }
 
   @media screen and (max-width: 940px) {

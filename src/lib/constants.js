@@ -1,11 +1,10 @@
-
 export const ERROR_MESSAGES = {
-    NODE_FETCHING_ERROR:"Something went wrong fetching the network info. Please, try again later.",
-    TOO_MANY_REQUESTS:"Too many requests. Please, try again later.",
-    SENDING_REQUEST:"Sending request...",
-    OK:"OK",
-    INVALID_ADDRESS:"This address is not valid."
-}
+  NODE_FETCHING_ERROR:
+    "Something went wrong fetching the network info. Please, try again later.",
+  TOO_MANY_REQUESTS: "Too many requests. Please, try again later.",
+  SENDING_REQUEST: "Sending request...",
+  OK: "OK",
+};
 
 export const IOTA_BENCH32HRP = "atoi";
 export const IOTA_TOKEN_NAME = "IOTA";

@@ -14,14 +14,14 @@ export const SHIMMER_TOKEN_NAME = "Shimmer";
 export const KNOWN_NETWORK_PARAMS = [
   {
     tokenName: IOTA_TOKEN_NAME,
-    bech32HRP: IOTA_BENCH32HRP,
+    bech32Hrp: IOTA_BENCH32HRP,
     logo: "iota.svg",
     favicon: "iota-fav.ico",
     illustration: "iota-illustration.svg",
   },
   {
     tokenName: SHIMMER_TOKEN_NAME,
-    bech32HRP: SHIMMER_BENCH32HRP,
+    bech32Hrp: SHIMMER_BENCH32HRP,
     logo: "shimmer.svg",
     favicon: "shimmer-fav.ico",
     illustration: "shimmer-illustration.png",

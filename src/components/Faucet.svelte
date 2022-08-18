@@ -3,7 +3,7 @@
   import { ERROR_MESSAGES } from "../lib/constants.js";
 
   export let tokenName;
-  export let bech32HRP;
+  export let bech32Hrp;
   export let illustration = "whitelabel-illustration.svg";
 
   $: valid = isValidBench32Address(address);
@@ -16,12 +16,12 @@
   let errorMessage = null;
 
   function isValidBench32Address(_address) {
-    if (!_address || !bech32HRP) {
+    if (!_address || !bech32Hrp) {
       return false;
     } else {
       try {
         const decodedAddress = bech32.decode(_address);
-        return decodedAddress && decodedAddress.prefix === bech32HRP;
+        return decodedAddress && decodedAddress.prefix === bech32Hrp;
       } catch(e) {
         return false;
       }
@@ -91,7 +91,7 @@
       {:else if valid}
         Click the request button to receive your coins
       {:else}
-        Please enter a valid {tokenName} address ({bech32HRP}1...)
+        Please enter a valid {tokenName} address ({bech32Hrp}1...)
       {/if}
     </div>
   {/if}

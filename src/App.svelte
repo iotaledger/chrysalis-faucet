@@ -13,7 +13,7 @@
 
   let errorMessage = null;
   let tokenName = null;
-  let bech32HRP = null;
+  let bech32Hrp = null;
 
   $: detectedNetworkDefaultParams = KNOWN_NETWORK_PARAMS.find(
     (networkParams) =>
@@ -64,15 +64,15 @@
     if (data.tokenName) {
       if (data.tokenName.toLowerCase() === IOTA_TOKEN_NAME.toLowerCase()) {
         tokenName = data.tokenName ? data.tokenName : IOTA_TOKEN_NAME;
-        bech32HRP = data.bech32HRP ? data.bech32HRP : IOTA_BENCH32HRP;
+        bech32Hrp = data.bech32Hrp ? data.bech32Hrp : IOTA_BENCH32HRP;
         document.body.classList.add("iota");
       } else if (data.tokenName.toLowerCase() === SHIMMER_TOKEN_NAME.toLowerCase()) {
         tokenName = data.tokenName ? data.tokenName : SHIMMER_TOKEN_NAME;
-        bech32HRP = data.bech32HRP ? data.bech32HRP : SHIMMER_BENCH32HRP;
+        bech32Hrp = data.bech32Hrp ? data.bech32Hrp : SHIMMER_BENCH32HRP;
         document.body.classList.add("shimmer");
       } else {
         tokenName = data.tokenName ? data.tokenName : "Foo Bar";
-        bech32HRP = data.bech32HRP ? data.bech32HRP : "foo1";
+        bech32Hrp = data.bech32Hrp ? data.bech32Hrp : "foo1";
       }
     } else {
       errorMessage = ERROR_MESSAGES.NODE_FETCHING_ERROR;
@@ -103,9 +103,9 @@
             <div in:fade>
               <Error {errorMessage} />
             </div>
-          {:else if tokenName && bech32HRP}
+          {:else if tokenName && bech32Hrp}
             <div in:fade>
-              <Faucet {bech32HRP} {tokenName} {illustration} />
+              <Faucet bech32Hrp={bech32Hrp} {tokenName} {illustration} />
             </div>
           {:else}
             <div in:fade>

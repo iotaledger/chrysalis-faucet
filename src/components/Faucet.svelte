@@ -37,7 +37,7 @@
     let data = null;
     errorMessage = ERROR_MESSAGES.SENDING_REQUEST;
     try {
-      const FAUCET_ENDPOINT = "/api/enqueue";
+      const FAUCET_ENDPOINT = "api/enqueue";
 
       response = await fetch(FAUCET_ENDPOINT, {
         method: "POST",
